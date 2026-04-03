@@ -649,11 +649,41 @@
       background: transparent;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow: visible;
       pointer-events: none;
+      transition: transform 0.25s ease;
     }
 
     #chat-panel * { pointer-events: auto; }
+
+    #chat-panel.chat-collapsed { transform: translateX(calc(100% - 24px)); }
+
+    #chat-tab {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      writing-mode: vertical-rl;
+      background: rgba(6,12,8,0.75);
+      border: 1px solid rgba(22,36,24,0.6);
+      border-right: none;
+      border-radius: 6px 0 0 6px;
+      color: #4a7a50;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 10px 4px;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    @media (max-width: 768px) {
+      #chat-tab { display: flex; align-items: center; justify-content: center; }
+      #chat-panel { width: 160px; }
+    }
 
     #chat-header {
       padding: 10px 14px;
@@ -736,7 +766,6 @@
         left: 16px;
         bottom: 12px;
       }
-      #chat-panel { width: 160px; }
       #info-overlay { display: none; }
       .stat-box .s-value { font-size: 0.85rem; }
     }
@@ -1061,6 +1090,7 @@
   </div>
 
   <div id="chat-panel">
+    <div id="chat-tab">Chat</div>
     <div id="chat-header">
       <div class="chat-live-dot"></div>
       Live Feed
@@ -2406,11 +2436,18 @@ const sidebarEl = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('sidebar-toggle');
 
 // Auto-collapse sidebar on mobile
-const isMobile = window.innerWidth <= 768;
+const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
 if (isMobile) {
   sidebarEl.classList.add('collapsed');
   toggleBtn.textContent = '›';
 }
+
+const chatPanelEl = document.getElementById('chat-panel');
+const chatTabEl   = document.getElementById('chat-tab');
+if (isMobile) chatPanelEl.classList.add('chat-collapsed');
+chatTabEl.addEventListener('click', () => {
+  chatPanelEl.classList.toggle('chat-collapsed');
+});
 
 const hudEl = document.getElementById('hud-overlay');
 hudEl.addEventListener('click', () => {

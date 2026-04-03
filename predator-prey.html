@@ -2411,9 +2411,9 @@ if (isMobile) {
   toggleBtn.textContent = '›';
 }
 
-// HUD collapse toggle — collapsed by default on mobile
+// HUD collapse toggle — collapsed by default always
 const hudEl = document.getElementById('hud-overlay');
-if (isMobile) hudEl.classList.add('hud-collapsed');
+hudEl.classList.add('hud-collapsed');
 document.getElementById('hud-toggle-row').addEventListener('click', () => {
   hudEl.classList.toggle('hud-collapsed');
 });

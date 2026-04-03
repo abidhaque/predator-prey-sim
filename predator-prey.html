@@ -293,10 +293,10 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-    }
-
-    #hud-body #graph-canvas {
-      display: block;
+      overflow: hidden;
+      transition: max-height 0.25s ease, opacity 0.2s, padding 0.2s;
+      max-height: 400px;
+      opacity: 1;
     }
 
     #hud-stats-score {
@@ -306,14 +306,21 @@
       opacity: 1;
     }
 
+    /* State: graph only */
     #hud-overlay.hud-collapsed #hud-stats-score {
       max-height: 0;
       opacity: 0;
     }
 
-    #hud-overlay.hud-collapsed #hud-toggle-btn {
-      transform: rotate(180deg);
+    /* State: tab only */
+    #hud-overlay.hud-tab #hud-body {
+      max-height: 0;
+      opacity: 0;
+      padding-bottom: 0;
     }
+
+    #hud-overlay.hud-tab #hud-toggle-btn { transform: rotate(180deg); }
+    #hud-overlay.hud-collapsed #hud-toggle-btn { transform: rotate(90deg); }
 
     #score-banner {
       display: flex;
@@ -1058,7 +1065,7 @@
   <div id="paused-badge">PAUSED</div>
 
   <!-- Bottom-left HUD: stats + graph + score -->
-  <div id="hud-overlay" class="hud-collapsed">
+  <div id="hud-overlay" class="hud-tab">
     <div id="hud-toggle-row">
       <span id="hud-toggle-label">Stats &amp; Graph</span>
       <span id="hud-toggle-btn">▲</span>
@@ -2456,8 +2463,24 @@ chatTabEl.addEventListener('click', () => {
 });
 
 const hudEl = document.getElementById('hud-overlay');
+const HUD_STATES = ['hud-tab', 'hud-collapsed', ''];
+const HUD_LABELS = ['Stats & Graph', 'Stats & Graph', 'Stats & Graph'];
+const HUD_ICONS  = ['▲', '▲', '▼'];
+
+function hudState() {
+  if (hudEl.classList.contains('hud-tab'))       return 0;
+  if (hudEl.classList.contains('hud-collapsed'))  return 1;
+  return 2;
+}
+
+function setHudState(i) {
+  hudEl.classList.remove('hud-tab', 'hud-collapsed');
+  if (HUD_STATES[i]) hudEl.classList.add(HUD_STATES[i]);
+  document.getElementById('hud-toggle-btn').textContent = HUD_ICONS[i];
+}
+
 hudEl.addEventListener('click', () => {
-  hudEl.classList.toggle('hud-collapsed');
+  setHudState((hudState() + 1) % 3);
 });
 
 toggleBtn.addEventListener('click', () => {

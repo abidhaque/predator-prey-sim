@@ -2242,10 +2242,67 @@ toggleBtn.addEventListener('click', () => {
   toggleBtn.textContent = sidebarEl.classList.contains('collapsed') ? '›' : '‹';
 });
 
-simCanvas.addEventListener('click', e => {
+// ── Coral drag-and-drop ──
+let draggingCoral = null;
+let dragOffX = 0, dragOffY = 0;
+let dragMoved = false;
+
+simCanvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
   const rect = simCanvas.getBoundingClientRect();
   const mx = (e.clientX - rect.left) * (simCanvas.width  / rect.width);
   const my = (e.clientY - rect.top)  * (simCanvas.height / rect.height);
+  for (const c of corals) {
+    if (Math.hypot(mx - c.x, my - c.y) < c.r) {
+      draggingCoral = c;
+      dragOffX = mx - c.x;
+      dragOffY = my - c.y;
+      dragMoved = false;
+      e.preventDefault();
+      return;
+    }
+  }
+});
+
+simCanvas.addEventListener('mousemove', e => {
+  if (!draggingCoral) return;
+  const rect = simCanvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (simCanvas.width  / rect.width);
+  const my = (e.clientY - rect.top)  * (simCanvas.height / rect.height);
+  draggingCoral.x = Math.max(draggingCoral.r, Math.min(simCanvas.width  - draggingCoral.r, mx - dragOffX));
+  draggingCoral.y = Math.max(draggingCoral.r, Math.min(simCanvas.height - draggingCoral.r, my - dragOffY));
+  dragMoved = true;
+  simCanvas.style.cursor = 'grabbing';
+});
+
+simCanvas.addEventListener('mouseup', e => {
+  if (draggingCoral) {
+    draggingCoral = null;
+    simCanvas.style.cursor = '';
+  }
+});
+
+simCanvas.addEventListener('mouseleave', () => {
+  if (draggingCoral) { draggingCoral = null; simCanvas.style.cursor = ''; }
+});
+
+// Show grab cursor when hovering a coral
+simCanvas.addEventListener('mousemove', e => {
+  if (draggingCoral) return;
+  const rect = simCanvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (simCanvas.width  / rect.width);
+  const my = (e.clientY - rect.top)  * (simCanvas.height / rect.height);
+  const onCoral = corals.some(c => Math.hypot(mx - c.x, my - c.y) < c.r);
+  simCanvas.style.cursor = onCoral ? 'grab' : '';
+});
+
+simCanvas.addEventListener('click', e => {
+  if (dragMoved) { dragMoved = false; return; } // suppress click after drag
+  const rect = simCanvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (simCanvas.width  / rect.width);
+  const my = (e.clientY - rect.top)  * (simCanvas.height / rect.height);
+  // Don't select agent if clicking on a coral
+  if (corals.some(c => Math.hypot(mx - c.x, my - c.y) < c.r)) return;
   let best = null, bestD = 50;
   for (const p of [...prey, ...predators]) {
     const d = Math.hypot(p.x - mx, p.y - my);

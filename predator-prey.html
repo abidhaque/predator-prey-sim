@@ -513,6 +513,20 @@
     </div>
   </div>
 
+  <!-- Environment: coral reefs -->
+  <div class="section">
+    <div class="section-title">Safe Havens (reset to apply)</div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name">Coral Reefs</span>
+        <span class="param-value" id="val-num-corals">3</span>
+      </div>
+      <input type="range" id="sl-num-corals" min="0" max="8" step="1" value="3" />
+      <div class="param-hint">Number of reef safe zones. Prey hide here; predators cannot enter.</div>
+    </div>
+  </div>
+
   <!-- Initial populations -->
   <div class="section">
     <div class="section-title">Initial Population (reset to apply)</div>
@@ -627,6 +641,7 @@ const P = {
   align:     1.0,
   coh:       0.8,
   flockRange: 65,
+  numCorals: 3,
   initPrey:  100,
   initPred:  6,
 };
@@ -665,6 +680,7 @@ bindSlider('sl-coh',         'coh',                'val-coh');
 bindSlider('sl-flock-range', 'flockRange',         'val-flock-range');
 bindSlider('sl-init-prey',   'initPrey',           'val-init-prey');
 bindSlider('sl-init-pred',   'initPred',           'val-init-pred');
+bindSlider('sl-num-corals',  'numCorals',          'val-num-corals');
 
 // ── Utility ──
 function vLimit(vx, vy, max) {
@@ -728,42 +744,57 @@ class Effect {
 // ── Food ──
 const foods = [];
 
-// ── Coral reef ──
-const CORAL = {
-  // Position set in init() once canvas size is known
-  x: 0, y: 0,
-  r: 70,       // reef radius — prey safe inside, predators blocked
-  hungerLeave: 0.35,  // prey leave when energy drops below this fraction of max
-};
+// ── Coral reefs ──
+const CORAL_R         = 70;   // radius of each reef
+const CORAL_HUNGER    = 0.35; // prey leave when energy < this fraction of max
+let corals = [];               // array of { x, y, r, rocks[], frondSeed }
 
-const coralRocks = [];  // decorative rock shapes, generated once
+function initCorals() {
+  corals = [];
+  const n   = P.numCorals | 0;
+  const W   = simCanvas.width, H = simCanvas.height;
+  const margin = CORAL_R + 30;
+  const minDist = CORAL_R * 2.8;  // keep reefs from overlapping
 
-function initCoral() {
-  CORAL.x = simCanvas.width  / 2;
-  CORAL.y = simCanvas.height / 2;
-  coralRocks.length = 0;
-  const rng = Math.random;
-  for (let i = 0; i < 18; i++) {
-    const a = (i / 18) * Math.PI * 2 + rng() * 0.3;
-    const dist = CORAL.r * (0.35 + rng() * 0.55);
-    coralRocks.push({
-      x: CORAL.x + Math.cos(a) * dist,
-      y: CORAL.y + Math.sin(a) * dist,
-      r: 6 + rng() * 10,
-      hue: 10 + rng() * 30,
-      sat: 50 + rng() * 30,
-    });
+  for (let attempts = 0, placed = 0; placed < n && attempts < n * 40; attempts++) {
+    const cx = rand(margin, W - margin);
+    const cy = rand(margin, H - margin);
+    // Reject if too close to an existing reef
+    if (corals.some(c => Math.hypot(cx - c.x, cy - c.y) < minDist)) continue;
+    const rocks = [];
+    for (let i = 0; i < 18; i++) {
+      const a    = (i / 18) * Math.PI * 2 + Math.random() * 0.3;
+      const dist = CORAL_R * (0.35 + Math.random() * 0.55);
+      rocks.push({
+        x: cx + Math.cos(a) * dist,
+        y: cy + Math.sin(a) * dist,
+        r:   6 + Math.random() * 10,
+        hue: 10 + Math.random() * 30,
+        sat: 50 + Math.random() * 30,
+      });
+    }
+    corals.push({ x: cx, y: cy, r: CORAL_R, rocks, frondSeed: Math.random() * 100 });
+    placed++;
   }
 }
 
 function inCoral(x, y) {
-  return Math.hypot(x - CORAL.x, y - CORAL.y) < CORAL.r;
+  return corals.some(c => Math.hypot(x - c.x, y - c.y) < c.r);
 }
 
-function drawCoral(t) {
-  const cx = CORAL.x, cy = CORAL.y, cr = CORAL.r;
+function nearestCoral(x, y) {
+  let best = null, bestD = Infinity;
+  for (const c of corals) {
+    const d = Math.hypot(x - c.x, y - c.y);
+    if (d < bestD) { bestD = d; best = c; }
+  }
+  return best;
+}
 
-  // Soft glow behind reef
+function drawOneReef(c, t) {
+  const { x: cx, y: cy, r: cr, rocks, frondSeed } = c;
+
+  // Soft glow
   const grd = ctx.createRadialGradient(cx, cy, cr * 0.2, cx, cy, cr * 1.1);
   grd.addColorStop(0,   'rgba(0,200,150,0.07)');
   grd.addColorStop(0.6, 'rgba(0,120,100,0.04)');
@@ -774,7 +805,7 @@ function drawCoral(t) {
   ctx.fill();
 
   // Rocks
-  for (const rock of coralRocks) {
+  for (const rock of rocks) {
     ctx.save();
     ctx.beginPath();
     ctx.arc(rock.x, rock.y, rock.r, 0, Math.PI * 2);
@@ -789,13 +820,13 @@ function drawCoral(t) {
   // Coral fronds — animated
   const fronds = 14;
   for (let i = 0; i < fronds; i++) {
-    const a  = (i / fronds) * Math.PI * 2;
-    const d  = cr * (0.25 + 0.3 * ((i * 7) % 5) / 4);
-    const bx = cx + Math.cos(a) * d;
-    const by = cy + Math.sin(a) * d;
-    const wave = Math.sin(t * 0.03 + i * 1.1) * 4;
-    const h  = 10 + ((i * 3) % 8);
-    const col = i % 3 === 0 ? '#f472b6' : i % 3 === 1 ? '#34d399' : '#fb923c';
+    const a    = (i / fronds) * Math.PI * 2;
+    const d    = cr * (0.25 + 0.3 * ((i * 7) % 5) / 4);
+    const bx   = cx + Math.cos(a) * d;
+    const by   = cy + Math.sin(a) * d;
+    const wave = Math.sin(t * 0.03 + i * 1.1 + frondSeed) * 4;
+    const h    = 10 + ((i * 3) % 8);
+    const col  = i % 3 === 0 ? '#f472b6' : i % 3 === 1 ? '#34d399' : '#fb923c';
     ctx.save();
     ctx.strokeStyle = col;
     ctx.lineWidth = 2;
@@ -804,7 +835,6 @@ function drawCoral(t) {
     ctx.moveTo(bx, by);
     ctx.quadraticCurveTo(bx + wave, by - h * 0.5, bx + wave * 0.5, by - h);
     ctx.stroke();
-    // tip dot
     ctx.beginPath();
     ctx.arc(bx + wave * 0.5, by - h, 2, 0, Math.PI * 2);
     ctx.fillStyle = col;
@@ -822,6 +852,10 @@ function drawCoral(t) {
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.restore();
+}
+
+function drawCorals(t) {
+  for (const c of corals) drawOneReef(c, t);
 }
 
 function spawnFood() {
@@ -924,9 +958,10 @@ class Prey {
       }
     }
 
-    // Steer toward coral when threatened and not already there
-    if (fleeing && !hiding && !hungry) {
-      const dx = CORAL.x - this.x, dy = CORAL.y - this.y;
+    // Steer toward nearest coral when threatened and not already hiding
+    if (fleeing && !hiding && !hungry && corals.length > 0) {
+      const nc = nearestCoral(this.x, this.y);
+      const dx = nc.x - this.x, dy = nc.y - this.y;
       let [cx, cy] = vSetMag(dx, dy, P.preyFleeSpeed);
       cx -= this.vx; cy -= this.vy;
       [cx, cy] = vLimit(cx, cy, 0.4);
@@ -1120,14 +1155,16 @@ class Predator {
       fy += rand(-0.2, 0.2);
     }
 
-    // Repel predator from coral (they can't enter)
-    const dCoral = Math.hypot(this.x - CORAL.x, this.y - CORAL.y);
-    if (dCoral < CORAL.r + 20) {
-      const push = (CORAL.r + 20 - dCoral) / 20;
-      const dx = this.x - CORAL.x, dy = this.y - CORAL.y;
-      const [rx, ry] = vSetMag(dx, dy, 1);
-      fx += rx * push * 0.5;
-      fy += ry * push * 0.5;
+    // Repel predator from all corals (they can't enter)
+    for (const c of corals) {
+      const dCoral = Math.hypot(this.x - c.x, this.y - c.y);
+      if (dCoral < c.r + 20) {
+        const push = (c.r + 20 - dCoral) / 20;
+        const dx = this.x - c.x, dy = this.y - c.y;
+        const [rx, ry] = vSetMag(dx, dy, 1);
+        fx += rx * push * 0.5;
+        fy += ry * push * 0.5;
+      }
     }
 
     // Separate from other predators
@@ -1255,7 +1292,7 @@ function resize() {
 
 function init() {
   resize();
-  initCoral();
+  initCorals();
   tick = 0; maxGen = 0; selectedAgent = null;
   prey = []; predators = []; foods.length = 0; effects.length = 0;
   hist.prey.length = 0; hist.pred.length = 0; hist.food.length = 0;
@@ -1410,8 +1447,8 @@ function draw() {
   for (let x = 0; x <= W; x += gs) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for (let y = 0; y <= H; y += gs) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
-  // Coral reef (behind everything)
-  drawCoral(tick);
+  // Coral reefs (behind everything)
+  drawCorals(tick);
 
   // Food
   for (const f of foods) drawFood(f, tick);
@@ -1569,6 +1606,7 @@ const SLIDER_KEYS = [
   ['sl-food-regen',  'foodRegenRate'],
   ['sl-init-prey',   'initPrey'],
   ['sl-init-pred',   'initPred'],
+  ['sl-num-corals',  'numCorals'],
 ];
 
 function paramsToURL() {
@@ -1657,7 +1695,7 @@ simCanvas.addEventListener('click', e => {
 
 window.addEventListener('resize', () => {
   resize();
-  initCoral();
+  initCorals();
   for (const p of [...prey, ...predators]) {
     if (p.x > simCanvas.width)  p.x = Math.random() * simCanvas.width;
     if (p.y > simCanvas.height) p.y = Math.random() * simCanvas.height;

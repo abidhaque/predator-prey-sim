@@ -1654,7 +1654,7 @@ function drawThoughtBubble(ax, ay, text, name, accentColor) {
 const chatEl = document.getElementById('chat-messages');
 const CHAT_MAX = 120;
 let lastChatTime = 0;
-const CHAT_INTERVAL_MS = 2000; // max one new message every 2 seconds
+const CHAT_INTERVAL_MS = 5000; // max one new message every 5 seconds
 let chatUserScrolled = false; // pause auto-scroll when user scrolls up
 
 chatEl.addEventListener('scroll', () => {

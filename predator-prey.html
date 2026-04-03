@@ -262,6 +262,25 @@
       cursor: pointer;
       display: flex;
       flex-direction: column;
+      overflow: visible;
+    }
+
+    #hud-protrude {
+      position: absolute;
+      top: -30px;
+      left: 0;
+      background: rgba(6,12,8,0.85);
+      border: 1px solid rgba(74,222,128,0.3);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      color: #4ade80;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      pointer-events: auto;
+      white-space: nowrap;
     }
 
     #hud-toggle-row {
@@ -312,14 +331,21 @@
       opacity: 0;
     }
 
-    /* State: tab only */
+    /* State: tab only — hide panel body and toggle row, show only protruding tab */
     #hud-overlay.hud-tab #hud-body {
       max-height: 0;
       opacity: 0;
       padding-bottom: 0;
     }
 
-    #hud-overlay.hud-tab #hud-toggle-btn { transform: rotate(180deg); }
+    #hud-overlay.hud-tab #hud-toggle-row {
+      display: none;
+    }
+
+    /* Hide the protrude tab when panel is open */
+    #hud-protrude { display: none; }
+    #hud-overlay.hud-tab #hud-protrude { display: block; }
+
     #hud-overlay.hud-collapsed #hud-toggle-btn { transform: rotate(90deg); }
 
     #score-banner {
@@ -1066,6 +1092,7 @@
 
   <!-- Bottom-left HUD: stats + graph + score -->
   <div id="hud-overlay" class="hud-tab">
+    <div id="hud-protrude">📊 Stats</div>
     <div id="hud-toggle-row">
       <span id="hud-toggle-label">Stats &amp; Graph</span>
       <span id="hud-toggle-btn">▲</span>

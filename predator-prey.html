@@ -513,14 +513,19 @@
 
     /* ── Live Chat Panel ── */
     #chat-panel {
-      width: 230px;
-      flex-shrink: 0;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 220px;
       background: transparent;
-      border-left: none;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      pointer-events: none;
     }
+
+    #chat-panel * { pointer-events: auto; }
 
     #chat-header {
       padding: 10px 14px;
@@ -853,15 +858,14 @@
   </div>
 
   <div id="paused-badge">PAUSED</div>
-</div>
 
-<!-- ═══════════════════════════════════ CHAT PANEL ═══════════════════════════════════ -->
-<div id="chat-panel">
-  <div id="chat-header">
-    <div class="chat-live-dot"></div>
-    Live Feed
+  <div id="chat-panel">
+    <div id="chat-header">
+      <div class="chat-live-dot"></div>
+      Live Feed
+    </div>
+    <div id="chat-messages"></div>
   </div>
-  <div id="chat-messages"></div>
 </div>
 
 <script>

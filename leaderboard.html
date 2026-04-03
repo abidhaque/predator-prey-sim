@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard — Predator-Prey</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #060c08;
+      color: #b8d4b8;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      padding: 48px 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 { font-size: 1.8rem; font-weight: 700; color: #4ade80; }
+    header p  { margin-top: 8px; font-size: 0.85rem; color: #4a6650; }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 32px;
+      font-size: 0.8rem;
+      color: #4a6650;
+      text-decoration: none;
+    }
+    .back-link:hover { color: #4ade80; }
+
+    #board {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .loading {
+      text-align: center;
+      color: #3a5540;
+      font-size: 0.85rem;
+      padding: 40px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    thead tr {
+      border-bottom: 1px solid #1e3028;
+    }
+
+    th {
+      text-align: left;
+      padding: 8px 14px;
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #3a5540;
+      font-weight: 600;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #0f1e14;
+      transition: background 0.15s;
+    }
+    tbody tr:hover { background: #0b1810; }
+
+    td {
+      padding: 11px 14px;
+      vertical-align: middle;
+    }
+
+    .rank {
+      font-weight: 700;
+      color: #3a5540;
+      width: 40px;
+    }
+
+    .rank.gold   { color: #fde047; }
+    .rank.silver { color: #94a3b8; }
+    .rank.bronze { color: #fb923c; }
+
+    .score {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #4ade80;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score.mid  { color: #fde047; }
+    .score.low  { color: #f87171; }
+
+    .grade {
+      color: #5a7a60;
+      font-size: 0.75rem;
+    }
+
+    .submitter {
+      color: #60a5fa;
+    }
+
+    .replay-btn {
+      display: inline-block;
+      padding: 4px 10px;
+      background: #0b1a10;
+      border: 1px solid #1e3528;
+      border-radius: 5px;
+      color: #4ade80;
+      text-decoration: none;
+      font-size: 0.7rem;
+      transition: border-color 0.15s;
+    }
+    .replay-btn:hover { border-color: #4ade80; }
+
+    .params-cell {
+      font-family: monospace;
+      font-size: 0.68rem;
+      color: #4a6650;
+      max-width: 260px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .submit-cta {
+      text-align: center;
+      margin-top: 40px;
+      padding: 24px;
+      border: 1px dashed #1e3028;
+      border-radius: 10px;
+      color: #4a6650;
+      font-size: 0.82rem;
+    }
+
+    .submit-cta a {
+      color: #4ade80;
+      text-decoration: none;
+    }
+
+    .error { text-align: center; color: #f87171; font-size: 0.82rem; padding: 40px; }
+  </style>
+</head>
+<body>
+
+<div id="board">
+  <a class="back-link" href="index.html">← Back to simulations</a>
+
+  <header>
+    <h1>Oscillation Leaderboard</h1>
+    <p>Top Lotka-Volterra configs submitted by players. Can you beat the best score?</p>
+  </header>
+
+  <div id="content" class="loading">Loading submissions…</div>
+
+  <div class="submit-cta">
+    Play the <a href="predator-prey.html">Predator-Prey sim</a>, tune the sliders until you get stable oscillations,
+    then hit <strong>Submit to Leaderboard</strong> to appear here.
+  </div>
+</div>
+
+<script>
+const REPO = 'abidhaque/predator-prey-sim';
+const LABEL = 'leaderboard';
+
+const SCORE_GRADES = [
+  [800,  'Textbook Lotka-Volterra'],
+  [500,  'Beautiful oscillations'],
+  [300,  'Stable cycles'],
+  [150,  'Weak oscillations'],
+  [50,   'Barely cycling'],
+  [1,    'Struggling'],
+];
+
+function grade(s) {
+  for (const [t, l] of SCORE_GRADES) if (s >= t) return l;
+  return '';
+}
+
+function scoreClass(s) {
+  if (s >= 300) return '';
+  if (s >= 100) return 'mid';
+  return 'low';
+}
+
+function rankClass(i) {
+  if (i === 0) return 'gold';
+  if (i === 1) return 'silver';
+  if (i === 2) return 'bronze';
+  return '';
+}
+
+function parseIssue(issue) {
+  // Title: "Leaderboard: Score 1234"
+  const titleMatch = issue.title.match(/Score\s+(\d+)/i);
+  if (!titleMatch) return null;
+  const score = parseInt(titleMatch[1]);
+
+  // Extract replay link from body
+  const replayMatch = (issue.body || '').match(/Replay link:\s*(https?:\/\/\S+)/);
+  const replayURL = replayMatch ? replayMatch[1] : null;
+
+  // Extract short params summary
+  const paramsMatch = (issue.body || '').match(/```([\s\S]*?)```/);
+  const params = paramsMatch ? paramsMatch[1].trim().replace(/\n/g, ', ') : '';
+
+  return {
+    score,
+    grade: grade(score),
+    scoreClass: scoreClass(score),
+    submitter: issue.user.login,
+    replayURL,
+    params,
+    issueURL: issue.html_url,
+    date: new Date(issue.created_at).toLocaleDateString(),
+  };
+}
+
+async function load() {
+  const el = document.getElementById('content');
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${REPO}/issues?labels=${LABEL}&state=open&per_page=50&sort=created&direction=desc`
+    );
+    if (!res.ok) throw new Error(`GitHub API error ${res.status}`);
+    const issues = await res.json();
+
+    const entries = issues
+      .map(parseIssue)
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score);
+
+    if (entries.length === 0) {
+      el.innerHTML = '<div class="loading">No submissions yet — be the first!</div>';
+      return;
+    }
+
+    const rows = entries.map((e, i) => `
+      <tr>
+        <td class="rank ${rankClass(i)}">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i+1}</td>
+        <td><div class="score ${e.scoreClass}">${e.score}</div><div class="grade">${e.grade}</div></td>
+        <td class="submitter"><a href="https://github.com/${e.submitter}" target="_blank" style="color:inherit;text-decoration:none">@${e.submitter}</a></td>
+        <td class="params-cell" title="${e.params}">${e.params}</td>
+        <td>${e.replayURL ? `<a class="replay-btn" href="${e.replayURL}" target="_blank">▶ Replay</a>` : '—'}</td>
+        <td style="color:#3a5540;font-size:0.7rem">${e.date}</td>
+      </tr>
+    `).join('');
+
+    el.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Score</th>
+            <th>Player</th>
+            <th>Parameters</th>
+            <th>Replay</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  } catch (err) {
+    el.innerHTML = `<div class="error">Could not load leaderboard: ${err.message}<br><br>
+      <a href="https://github.com/${REPO}/issues?labels=${LABEL}" target="_blank" style="color:#f87171">
+        View submissions on GitHub directly →
+      </a></div>`;
+  }
+}
+
+load();
+</script>
+</body>
+</html>

@@ -203,6 +203,39 @@
     .s-gen   { color: #67e8f9; }
     .s-fps   { color: #a78bfa; }
     .s-phase { color: #fb923c; }
+    .s-score { color: #4ade80; }
+
+    /* ── Score banner ── */
+    #score-banner {
+      margin: 10px 18px 0;
+      background: #0b1a10;
+      border: 1px solid #1e3a28;
+      border-radius: 8px;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #score-banner .sb-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #3a5540;
+    }
+
+    #score-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #4ade80;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #score-grade {
+      font-size: 0.7rem;
+      color: #3a5540;
+      margin-top: 1px;
+    }
 
     /* ── Buttons ── */
     .btn-row {
@@ -211,6 +244,7 @@
       padding: 12px 18px;
       margin-top: auto;
       border-top: 1px solid #162418;
+      flex-wrap: wrap;
     }
 
     button {
@@ -236,6 +270,19 @@
       background: #162418;
       color: #8aaa8a;
       border: 1px solid #1e3020;
+    }
+
+    #btn-share {
+      background: #0d1e2e;
+      color: #60a5fa;
+      border: 1px solid #1e3a55;
+    }
+
+    #btn-submit {
+      background: #1a0d20;
+      color: #c084fc;
+      border: 1px solid #3a1e55;
+      flex-basis: 100%;
     }
 
     button:hover { opacity: 0.8; }
@@ -330,9 +377,9 @@
     <div class="param-row prey-param">
       <div class="param-label">
         <span class="param-name">Repro. Energy Threshold</span>
-        <span class="param-value" id="val-prey-repro">80</span>
+        <span class="param-value" id="val-prey-repro">50</span>
       </div>
-      <input type="range" id="sl-prey-repro" min="30" max="150" step="5" value="80" />
+      <input type="range" id="sl-prey-repro" min="30" max="150" step="5" value="50" />
       <div class="param-hint">Energy needed to reproduce. Lower = breeds faster.</div>
     </div>
 
@@ -371,36 +418,36 @@
     <div class="param-row pred-param">
       <div class="param-label">
         <span class="param-name">Repro. Energy Threshold</span>
-        <span class="param-value" id="val-pred-repro">120</span>
+        <span class="param-value" id="val-pred-repro">110</span>
       </div>
-      <input type="range" id="sl-pred-repro" min="40" max="250" step="5" value="120" />
+      <input type="range" id="sl-pred-repro" min="40" max="250" step="5" value="110" />
       <div class="param-hint">Energy needed to reproduce. Lower = breeds faster.</div>
     </div>
 
     <div class="param-row pred-param">
       <div class="param-label">
         <span class="param-name">Energy per Kill</span>
-        <span class="param-value" id="val-pred-kill-e">70</span>
+        <span class="param-value" id="val-pred-kill-e">100</span>
       </div>
-      <input type="range" id="sl-pred-kill-e" min="10" max="150" step="5" value="70" />
+      <input type="range" id="sl-pred-kill-e" min="10" max="150" step="5" value="100" />
       <div class="param-hint">Energy gained when catching prey.</div>
     </div>
 
     <div class="param-row pred-param">
       <div class="param-label">
         <span class="param-name">Energy Drain Rate</span>
-        <span class="param-value" id="val-pred-drain">0.20</span>
+        <span class="param-value" id="val-pred-drain">0.12</span>
       </div>
-      <input type="range" id="sl-pred-drain" min="0.02" max="0.8" step="0.02" value="0.20" />
+      <input type="range" id="sl-pred-drain" min="0.02" max="0.8" step="0.02" value="0.12" />
       <div class="param-hint">Predators starve faster than prey by default.</div>
     </div>
 
     <div class="param-row pred-param">
       <div class="param-label">
         <span class="param-name">Chase Speed</span>
-        <span class="param-value" id="val-pred-speed">3.0</span>
+        <span class="param-value" id="val-pred-speed">4.4</span>
       </div>
-      <input type="range" id="sl-pred-speed" min="0.5" max="7" step="0.1" value="3.0" />
+      <input type="range" id="sl-pred-speed" min="0.5" max="7" step="0.1" value="4.4" />
       <div class="param-hint">Try setting below prey speed to see prey always escape.</div>
     </div>
   </div>
@@ -412,18 +459,18 @@
     <div class="param-row food-param">
       <div class="param-label">
         <span class="param-name">Food Abundance (max)</span>
-        <span class="param-value" id="val-max-food">90</span>
+        <span class="param-value" id="val-max-food">160</span>
       </div>
-      <input type="range" id="sl-max-food" min="10" max="300" step="5" value="90" />
+      <input type="range" id="sl-max-food" min="10" max="300" step="5" value="160" />
       <div class="param-hint">Maximum food items on screen at once.</div>
     </div>
 
     <div class="param-row food-param">
       <div class="param-label">
         <span class="param-name">Food Regen Speed</span>
-        <span class="param-value" id="val-food-regen">12</span>
+        <span class="param-value" id="val-food-regen">10</span>
       </div>
-      <input type="range" id="sl-food-regen" min="2" max="60" step="1" value="12" />
+      <input type="range" id="sl-food-regen" min="2" max="60" step="1" value="10" />
       <div class="param-hint">Frames between each new food item spawning. Lower = faster.</div>
     </div>
   </div>
@@ -473,17 +520,18 @@
     <div class="param-row prey-param">
       <div class="param-label">
         <span class="param-name">Initial Prey</span>
-        <span class="param-value" id="val-init-prey">80</span>
+        <span class="param-value" id="val-init-prey">100</span>
       </div>
-      <input type="range" id="sl-init-prey" min="5" max="200" step="5" value="80" />
+      <input type="range" id="sl-init-prey" min="5" max="200" step="5" value="100" />
+
     </div>
 
     <div class="param-row pred-param">
       <div class="param-label">
         <span class="param-name">Initial Predators</span>
-        <span class="param-value" id="val-init-pred">6</span>
+        <span class="param-value" id="val-init-pred">8</span>
       </div>
-      <input type="range" id="sl-init-pred" min="1" max="40" step="1" value="6" />
+      <input type="range" id="sl-init-pred" min="1" max="40" step="1" value="8" />
     </div>
   </div>
 
@@ -513,9 +561,20 @@
     </div>
   </div>
 
+  <!-- Oscillation score -->
+  <div id="score-banner">
+    <div>
+      <div class="sb-label">Oscillation Score</div>
+      <div id="score-value">—</div>
+      <div id="score-grade">Run the sim to score</div>
+    </div>
+  </div>
+
   <div class="btn-row">
     <button id="btn-pause">⏸ Pause</button>
     <button id="btn-reset">↺ Reset</button>
+    <button id="btn-share">🔗 Share</button>
+    <button id="btn-submit">🏆 Submit to Leaderboard</button>
   </div>
 </div>
 
@@ -551,16 +610,16 @@ const gctx       = graphCanvas.getContext('2d');
 
 // ── Parameters (all live except initPrey/initPred) ──
 const P = {
-  preyReproThreshold: 80,
-  predReproThreshold: 120,
+  preyReproThreshold: 50,
+  predReproThreshold: 130,
   preyFoodEnergy:     28,
-  predPreyEnergy:     70,
+  predPreyEnergy:     100,
   preyEnergyDrain:    0.08,
-  predEnergyDrain:    0.20,
-  foodRegenRate:      12,
-  maxFood:            90,
+  predEnergyDrain:    0.12,
+  foodRegenRate:      10,
+  maxFood:            160,
   preySpeed:          2.5,
-  predSpeed:          3.0,
+  predSpeed:          4.4,
   preyFleeSpeed:      4.2,
   predDetectRange:    90,
   predChaseRange:     130,
@@ -568,14 +627,14 @@ const P = {
   align:     1.0,
   coh:       0.8,
   flockRange: 65,
-  initPrey:  80,
+  initPrey:  100,
   initPred:  6,
 };
 
 const PREY_MAX_E   = 100;
 const PRED_MAX_E   = 180;
 const EAT_RADIUS   = 12;
-const KILL_RADIUS  = 14;
+const KILL_RADIUS  = 10;
 const MAX_PREY     = 350;
 const MAX_PRED     = 70;
 
@@ -1270,6 +1329,7 @@ function loop() {
 
     updateStats();
     checkExtinction();
+    if (tick % 60 === 0) updateScore();
   }
 
   draw();
@@ -1277,6 +1337,118 @@ function loop() {
 
   requestAnimationFrame(loop);
 }
+
+// ── Oscillation scoring ──
+let currentScore = 0;
+
+function computeScore() {
+  const pr = hist.prey;
+  const pd = hist.pred;
+  if (pr.length < 60) return 0;
+
+  const skip = Math.floor(pr.length / 3);
+  const prS = pr.slice(skip);
+  const pdS = pd.slice(skip);
+
+  if (prS[prS.length-1] === 0 || pdS[pdS.length-1] === 0) return 0;
+
+  const mean = a => a.reduce((s,x) => s+x, 0) / a.length;
+  const std  = a => { const m = mean(a); return Math.sqrt(a.reduce((s,x) => s+(x-m)**2, 0)/a.length); };
+
+  const prMean = mean(prS), pdMean = mean(pdS);
+  const cv = (std(prS)/(prMean+1) + std(pdS)/(pdMean+1)) / 2;
+
+  // Count prey peaks
+  let peaks = 0;
+  const peakIdxs = [];
+  for (let i = 1; i < prS.length-1; i++) {
+    if (prS[i] > prS[i-1] && prS[i] > prS[i+1]) { peaks++; peakIdxs.push(i); }
+  }
+
+  // Regularity of peak intervals
+  let regularity = 0;
+  if (peakIdxs.length >= 3) {
+    const ivs = peakIdxs.slice(1).map((v,i) => v - peakIdxs[i]);
+    const ivMean = mean(ivs);
+    const ivStd  = std(ivs);
+    regularity = 1 / (1 + ivStd / Math.max(ivMean, 1));
+  }
+
+  const prMin = Math.min(...prS), pdMin = Math.min(...pdS);
+  const viability = Math.min(prMin/5, 1) * Math.min(pdMin/2, 1);
+  const popBonus  = Math.min(prMean/40, 1) * Math.min(pdMean/6, 1);
+  const longevity = Math.min(pr.length / 200, 1);
+
+  const raw = cv * Math.min(peaks/4, 1) * popBonus * longevity * viability * (0.4 + 0.6*regularity);
+  return Math.round(raw * 10000);
+}
+
+const SCORE_GRADES = [
+  [800,  'Textbook Lotka-Volterra'],
+  [500,  'Beautiful oscillations'],
+  [300,  'Stable cycles'],
+  [150,  'Weak oscillations'],
+  [50,   'Barely cycling'],
+  [1,    'Struggling'],
+  [0,    'Run the sim to score'],
+];
+
+function scoreGrade(s) {
+  for (const [thresh, label] of SCORE_GRADES) if (s >= thresh) return label;
+  return 'Run the sim to score';
+}
+
+function updateScore() {
+  const s = computeScore();
+  if (s === currentScore) return;
+  currentScore = s;
+  const el = document.getElementById('score-value');
+  const gr = document.getElementById('score-grade');
+  el.textContent = s > 0 ? s : '—';
+  gr.textContent = scoreGrade(s);
+  el.style.color = s > 500 ? '#4ade80' : s > 150 ? '#fde047' : '#f87171';
+}
+
+// ── URL param encoding ──
+const SLIDER_KEYS = [
+  ['sl-prey-repro',  'preyReproThreshold'],
+  ['sl-prey-food-e', 'preyFoodEnergy'],
+  ['sl-prey-drain',  'preyEnergyDrain'],
+  ['sl-prey-flee',   'preyFleeSpeed'],
+  ['sl-pred-repro',  'predReproThreshold'],
+  ['sl-pred-kill-e', 'predPreyEnergy'],
+  ['sl-pred-drain',  'predEnergyDrain'],
+  ['sl-pred-speed',  'predSpeed'],
+  ['sl-max-food',    'maxFood'],
+  ['sl-food-regen',  'foodRegenRate'],
+  ['sl-init-prey',   'initPrey'],
+  ['sl-init-pred',   'initPred'],
+];
+
+function paramsToURL() {
+  const url = new URL(window.location.href);
+  for (const [sliderId, key] of SLIDER_KEYS) {
+    url.searchParams.set(key, P[key]);
+  }
+  return url.toString();
+}
+
+function loadParamsFromURL() {
+  const sp = new URL(window.location.href).searchParams;
+  for (const [sliderId, key] of SLIDER_KEYS) {
+    if (!sp.has(key)) continue;
+    const v = parseFloat(sp.get(key));
+    if (isNaN(v)) continue;
+    P[key] = v;
+    const slider = document.getElementById(sliderId);
+    const display = document.getElementById('val-' + sliderId.replace('sl-', ''));
+    if (slider) slider.value = v;
+    if (display) display.textContent = v;
+  }
+}
+
+// Load URL params on startup
+loadParamsFromURL();
 
 // ── Controls ──
 document.getElementById('btn-pause').addEventListener('click', () => {
@@ -1291,6 +1463,37 @@ document.getElementById('btn-reset').addEventListener('click', () => {
   document.getElementById('btn-pause').textContent = '⏸ Pause';
   document.getElementById('paused-badge').style.display = 'none';
   init();
+});
+
+document.getElementById('btn-share').addEventListener('click', () => {
+  const url = paramsToURL();
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('btn-share');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = '🔗 Share', 2000);
+  });
+});
+
+document.getElementById('btn-submit').addEventListener('click', () => {
+  if (currentScore === 0) {
+    alert('Let the simulation run for a while first to get a score.');
+    return;
+  }
+  const params = SLIDER_KEYS.map(([,k]) => `${k}=${P[k]}`).join(', ');
+  const shareURL = paramsToURL();
+  const body = [
+    `**Score: ${currentScore}**`,
+    `**Grade: ${scoreGrade(currentScore)}**`,
+    ``,
+    `**Parameters:**`,
+    `\`\`\``,
+    params,
+    `\`\`\``,
+    ``,
+    `**Replay link:** ${shareURL}`,
+  ].join('\n');
+  const issueURL = `https://github.com/abidhaque/predator-prey-sim/issues/new?title=${encodeURIComponent('Leaderboard: Score ' + currentScore)}&body=${encodeURIComponent(body)}&labels=leaderboard`;
+  window.open(issueURL, '_blank');
 });
 
 // Click to select

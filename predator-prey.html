@@ -473,6 +473,15 @@
       <input type="range" id="sl-food-regen" min="2" max="60" step="1" value="10" />
       <div class="param-hint">Frames between each new food item spawning. Lower = faster.</div>
     </div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name">Coral Reefs</span>
+        <span class="param-value" id="val-num-corals">3</span>
+      </div>
+      <input type="range" id="sl-num-corals" min="0" max="8" step="1" value="3" />
+      <div class="param-hint">Safe havens — prey hide here, predators blocked. Reset to apply.</div>
+    </div>
   </div>
 
   <!-- Prey flocking -->
@@ -510,20 +519,6 @@
         <span class="param-value" id="val-flock-range">65</span>
       </div>
       <input type="range" id="sl-flock-range" min="15" max="180" step="5" value="65" />
-    </div>
-  </div>
-
-  <!-- Environment: coral reefs -->
-  <div class="section">
-    <div class="section-title">Safe Havens (reset to apply)</div>
-
-    <div class="param-row">
-      <div class="param-label">
-        <span class="param-name">Coral Reefs</span>
-        <span class="param-value" id="val-num-corals">3</span>
-      </div>
-      <input type="range" id="sl-num-corals" min="0" max="8" step="1" value="3" />
-      <div class="param-hint">Number of reef safe zones. Prey hide here; predators cannot enter.</div>
     </div>
   </div>
 

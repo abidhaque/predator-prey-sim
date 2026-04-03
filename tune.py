@@ -211,10 +211,6 @@ def score_history(history):
         return 0.0
 
     pr_min = min(pr_vals); pd_min = min(pd_vals)
-    # Hard floor: both populations must stay genuinely alive
-    if pr_min < 8 or pd_min < 3:
-        return 0.0
-
     pr_mean = sum(pr_vals)/len(pr_vals)
     pd_mean = sum(pd_vals)/len(pd_vals)
     pr_std  = math.sqrt(sum((x-pr_mean)**2 for x in pr_vals)/len(pr_vals))
@@ -236,10 +232,13 @@ def score_history(history):
         regularity = 0.0
 
     cv = (pr_std/(pr_mean+1) + pd_std/(pd_mean+1)) / 2
-    pop_bonus = min(pr_mean/40, 1.0) * min(pd_mean/6, 1.0)
     longevity = min(len(history)/250, 1.0)
 
-    return cv * min(peaks/6, 1.0) * pop_bonus * longevity * (0.4 + 0.6*regularity)
+    # Soft penalties instead of hard floors — score degrades near extinction
+    min_viability = min(pr_min/5.0, 1.0) * min(pd_min/2.0, 1.0)
+    pop_bonus = min(pr_mean/40, 1.0) * min(pd_mean/6, 1.0)
+
+    return cv * min(peaks/4, 1.0) * pop_bonus * longevity * min_viability * (0.4 + 0.6*regularity)
 
 
 def evaluate(P):
@@ -271,6 +270,20 @@ FIXED = {
     'predDetectRange': 90,
     'predChaseRange':  130,
     'initPrey':        100,
+}
+
+WARM_START = {
+    # Best found by Node.js grid search — use as annealing seed
+    'predSpeed':          4.4,
+    'preyFleeSpeed':      4.2,
+    'predEnergyDrain':    0.12,
+    'predReproThreshold': 130,
+    'preyReproThreshold': 50,
+    'predPreyEnergy':     100,
+    'killRadius':         10,
+    'maxFood':            160,
+    'foodRegenRate':      10,
+    'initPred':           6,
 }
 
 def random_params():
@@ -305,9 +318,11 @@ def anneal(max_iters=400, restarts=3):
     for restart in range(restarts):
         print(f"\n── Restart {restart+1}/{restarts} ──")
 
-        # warm start: use best known or random
+        # warm start: use best known, or warm_start seed, or random
         if best_P and restart > 0:
             current_P = perturb(best_P, 0.5)
+        elif restart == 0:
+            current_P = {**FIXED, **WARM_START}
         else:
             current_P = random_params()
 

@@ -1652,21 +1652,9 @@ function drawThoughtBubble(ax, ay, text, name, accentColor) {
 
 // ── Live chat feed ──
 const chatEl = document.getElementById('chat-messages');
-const CHAT_MAX = 120;
-let lastChatTime = 0;
-const CHAT_INTERVAL_MS = 5000; // max one new message every 5 seconds
-let chatUserScrolled = false; // pause auto-scroll when user scrolls up
-
-chatEl.addEventListener('scroll', () => {
-  const atBottom = chatEl.scrollHeight - chatEl.scrollTop - chatEl.clientHeight < 40;
-  chatUserScrolled = !atBottom;
-});
+const CHAT_MAX = 120; // max DOM nodes to keep
 
 function addChatMessage(agent, isPred) {
-  const now = performance.now();
-  if (now - lastChatTime < CHAT_INTERVAL_MS) return;
-  lastChatTime = now;
-
   const msgEl = document.createElement('div');
   msgEl.className = 'chat-msg';
 
@@ -1686,9 +1674,11 @@ function addChatMessage(agent, isPred) {
   msgEl.appendChild(textEl);
   chatEl.appendChild(msgEl);
 
+  // Trim old messages
   while (chatEl.children.length > CHAT_MAX) chatEl.removeChild(chatEl.firstChild);
 
-  if (!chatUserScrolled) chatEl.scrollTop = chatEl.scrollHeight;
+  // Auto-scroll to bottom
+  chatEl.scrollTop = chatEl.scrollHeight;
 }
 
 function computePreyThought(p) {
@@ -1736,7 +1726,7 @@ function updateAllThoughts() {
   for (const p of prey) {
     if (!p.alive) continue;
     if (--p.thoughtFrameCd > 0) continue;
-    p.thoughtFrameCd = 7200 + Math.floor(Math.random() * 360); // ~10–16s at 60fps
+    p.thoughtFrameCd = 600 + Math.floor(Math.random() * 360); // ~10–16s at 60fps
     const prev = p.thought;
     computePreyThought(p);
     if (p.thought !== prev) addChatMessage(p, false);

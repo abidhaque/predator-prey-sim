@@ -287,6 +287,91 @@
 
     button:hover { opacity: 0.8; }
 
+    /* ── Presets ── */
+    #presets-section {
+      padding: 12px 18px;
+      border-bottom: 1px solid #162418;
+    }
+
+    #presets-section .section-title {
+      font-size: 0.61rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3a5540;
+      margin-bottom: 10px;
+    }
+
+    .preset-slots {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .preset-row {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .preset-name {
+      flex: 1;
+      background: #0b1410;
+      border: 1px solid #1a2e1a;
+      border-radius: 5px;
+      color: #5a7a5a;
+      font-size: 0.72rem;
+      padding: 4px 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-style: italic;
+    }
+
+    .preset-name.filled {
+      color: #8aaa8a;
+      font-style: normal;
+    }
+
+    .preset-btn {
+      flex: 0 0 auto;
+      padding: 4px 8px;
+      font-size: 0.68rem;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+
+    .preset-save {
+      background: #0d2016;
+      color: #4ade80;
+      border: 1px solid #1a3520;
+    }
+
+    .preset-load {
+      background: #0d1e2e;
+      color: #60a5fa;
+      border: 1px solid #1e3a55;
+    }
+
+    .preset-load:disabled {
+      opacity: 0.25;
+      cursor: default;
+    }
+
+    .preset-del {
+      background: #1a0d0d;
+      color: #f87171;
+      border: 1px solid #3a1e1e;
+    }
+
+    .preset-del:disabled {
+      opacity: 0.15;
+      cursor: default;
+    }
+
     /* ── Canvas wrap ── */
     #canvas-wrap {
       flex: 1;
@@ -542,6 +627,12 @@
       </div>
       <input type="range" id="sl-init-pred" min="1" max="40" step="1" value="8" />
     </div>
+  </div>
+
+  <!-- Presets -->
+  <div id="presets-section">
+    <div class="section-title">Saved Presets</div>
+    <div class="preset-slots" id="preset-slots"></div>
   </div>
 
   <!-- Population graph -->
@@ -1699,6 +1790,100 @@ window.addEventListener('resize', () => {
     if (p.y > simCanvas.height) p.y = Math.random() * simCanvas.height;
   }
 });
+
+// ── Presets ──
+const PRESET_COUNT = 5;
+const PRESET_KEY   = 'pp_presets';
+
+function loadPresets() {
+  try { return JSON.parse(localStorage.getItem(PRESET_KEY)) || []; }
+  catch { return []; }
+}
+
+function savePresets(presets) {
+  localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
+}
+
+function getCurrentSettings() {
+  const settings = {};
+  for (const [sliderId, key] of SLIDER_KEYS) settings[key] = P[key];
+  return settings;
+}
+
+function applySettings(settings) {
+  for (const [sliderId, key] of SLIDER_KEYS) {
+    if (!(key in settings)) continue;
+    P[key] = settings[key];
+    const slider  = document.getElementById(sliderId);
+    const display = document.getElementById('val-' + sliderId.replace('sl-', ''));
+    if (slider)  slider.value = settings[key];
+    if (display) display.textContent = settings[key];
+  }
+}
+
+function renderPresets() {
+  const presets = loadPresets();
+  const container = document.getElementById('preset-slots');
+  container.innerHTML = '';
+
+  for (let i = 0; i < PRESET_COUNT; i++) {
+    const preset  = presets[i] || null;
+    const row     = document.createElement('div');
+    row.className = 'preset-row';
+
+    const nameEl  = document.createElement('div');
+    nameEl.className = 'preset-name' + (preset ? ' filled' : '');
+    nameEl.textContent = preset
+      ? (preset.name || `Preset ${i+1}`)
+      : `— empty slot ${i+1} —`;
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className   = 'preset-btn preset-save';
+    saveBtn.textContent = preset ? '↺' : '+';
+    saveBtn.title       = preset ? 'Overwrite with current settings' : 'Save current settings here';
+    saveBtn.addEventListener('click', () => {
+      const name = preset
+        ? (prompt('Preset name:', preset.name || `Preset ${i+1}`) || preset.name || `Preset ${i+1}`)
+        : (prompt('Name this preset:', `Preset ${i+1}`) || `Preset ${i+1}`);
+      const updated = loadPresets();
+      updated[i] = { name, score: currentScore, settings: getCurrentSettings() };
+      savePresets(updated);
+      renderPresets();
+    });
+
+    const loadBtn = document.createElement('button');
+    loadBtn.className   = 'preset-btn preset-load';
+    loadBtn.textContent = '▶';
+    loadBtn.title       = 'Load this preset';
+    loadBtn.disabled    = !preset;
+    loadBtn.addEventListener('click', () => {
+      if (!preset) return;
+      applySettings(preset.settings);
+      init();
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.className   = 'preset-btn preset-del';
+    delBtn.textContent = '✕';
+    delBtn.title       = 'Delete preset';
+    delBtn.disabled    = !preset;
+    delBtn.addEventListener('click', () => {
+      if (!preset) return;
+      const updated = loadPresets();
+      updated[i] = null;
+      savePresets(updated);
+      renderPresets();
+    });
+
+    row.appendChild(nameEl);
+    row.appendChild(saveBtn);
+    row.appendChild(loadBtn);
+    row.appendChild(delBtn);
+    container.appendChild(row);
+  }
+}
+
+renderPresets();
 
 // ── Kick off ──
 init();

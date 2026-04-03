@@ -1179,7 +1179,7 @@ class Prey {
     this.generation = 0;
     this.name     = autoName(false);
     this.thought  = '';
-    this.thoughtFrameCd = Math.floor(Math.random() * 600);
+    this.thoughtFrameCd = Math.floor(Math.random() * 120);
     // State flags set each tick for use by thought system
     this.isFleeing = false; this.isInCoral = false; this.isHungry = false; this.neighN = 0;
   }
@@ -1414,7 +1414,7 @@ class Predator {
     this.generation = 0;
     this.name     = autoName(true);
     this.thought  = '';
-    this.thoughtFrameCd = Math.floor(Math.random() * 600);
+    this.thoughtFrameCd = Math.floor(Math.random() * 120);
     // State flags set each tick for use by thought system
     this.hasTarget = false; this.targetClose = false;
   }
@@ -1653,7 +1653,7 @@ function drawThoughtBubble(ax, ay, text, name, accentColor) {
 // ── Live chat feed ──
 const chatEl = document.getElementById('chat-messages');
 const CHAT_MAX = 120;
-const CHAT_INTERVAL_MS = 4000; // one new message at most every 4 seconds
+const CHAT_INTERVAL_MS = 2000; // one new message at most every 2 seconds
 let lastChatTime = 0;
 let chatUserScrolled = false;
 

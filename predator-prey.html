@@ -1849,14 +1849,6 @@ class Predator {
 
     ctx.save();
     ctx.translate(this.x, this.y);
-
-    // Detect range (very faint)
-    ctx.beginPath();
-    ctx.arc(0, 0, P.predChaseRange, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(239,68,68,0.05)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
     ctx.rotate(angle);
 
     // Body — shark/wolf silhouette
@@ -1946,10 +1938,12 @@ function drawThoughtBubble(ax, ay, text, name, accentColor) {
   ctx.quadraticCurveTo(rbx + bw, by + bh, rbx + bw - r, by + bh);
   ctx.lineTo(rbx + r, by + bh);
   ctx.quadraticCurveTo(rbx, by + bh, rbx, by + bh - r);
-  ctx.lineTo(rbx, by + bh / 2 + 6);
-  // Tail pointing left toward agent
-  ctx.lineTo(tailX, ay);
-  ctx.lineTo(rbx, by + bh / 2 - 6);
+  if (offX === 0) {
+    // Tail only when bubble isn't clamped (avoids self-intersecting path)
+    ctx.lineTo(rbx, by + bh / 2 + 6);
+    ctx.lineTo(tailX, ay);
+    ctx.lineTo(rbx, by + bh / 2 - 6);
+  }
   ctx.lineTo(rbx, by + r);
   ctx.quadraticCurveTo(rbx, by, rbx + r, by);
   ctx.closePath();

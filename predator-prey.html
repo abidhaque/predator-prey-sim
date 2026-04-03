@@ -522,6 +522,19 @@
     <p>Agent-based Lotka-Volterra model. Populations rise and fall based on energy — no hard-coded birth/death rates.</p>
   </div>
 
+  <!-- Agent inspector -->
+  <div id="inspector">
+    <div class="section-title">
+      Selected Agent
+      <span id="inspector-type"></span>
+    </div>
+    <div id="inspector-name-row">
+      <input id="inspector-name" type="text" placeholder="Give them a name…" maxlength="24" />
+      <button id="inspector-name-set">Name</button>
+    </div>
+    <div id="inspector-thought">Click an agent to inspect it.</div>
+  </div>
+
   <!-- Prey ecology -->
   <div class="section">
     <div class="section-title">Prey (green)</div>
@@ -694,19 +707,6 @@
       </div>
       <input type="range" id="sl-init-pred" min="1" max="40" step="1" value="8" />
     </div>
-  </div>
-
-  <!-- Agent inspector -->
-  <div id="inspector">
-    <div class="section-title">
-      Selected Agent
-      <span id="inspector-type"></span>
-    </div>
-    <div id="inspector-name-row">
-      <input id="inspector-name" type="text" placeholder="Give them a name…" maxlength="24" />
-      <button id="inspector-name-set">Name</button>
-    </div>
-    <div id="inspector-thought">Click an agent to inspect it.</div>
   </div>
 
   <!-- Presets -->

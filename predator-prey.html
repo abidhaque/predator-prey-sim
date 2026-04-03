@@ -11,27 +11,30 @@
       background: #060c08;
       color: #b8d4b8;
       font-family: 'Segoe UI', system-ui, sans-serif;
-      display: flex;
+      position: relative;
       height: 100vh;
       overflow: hidden;
     }
 
     /* ── Sidebar ── */
     #sidebar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
       width: 300px;
-      flex-shrink: 0;
+      z-index: 10;
       background: #0b1410;
       border-right: 1px solid #162418;
       display: flex;
       flex-direction: column;
       overflow-y: auto;
       overflow-x: hidden;
-      transition: width 0.25s ease;
+      transition: transform 0.25s ease;
     }
 
     #sidebar.collapsed {
-      width: 0;
-      border-right: none;
+      transform: translateX(-300px);
     }
 
     #sidebar-toggle {
@@ -470,8 +473,8 @@
 
     /* ── Canvas wrap ── */
     #canvas-wrap {
-      flex: 1;
-      position: relative;
+      position: absolute;
+      inset: 0;
       overflow: hidden;
     }
 
@@ -2236,8 +2239,6 @@ const toggleBtn = document.getElementById('sidebar-toggle');
 toggleBtn.addEventListener('click', () => {
   sidebarEl.classList.toggle('collapsed');
   toggleBtn.textContent = sidebarEl.classList.contains('collapsed') ? '›' : '‹';
-  // Resize canvas after transition
-  setTimeout(() => { resizeCanvas(); }, 260);
 });
 
 simCanvas.addEventListener('click', e => {

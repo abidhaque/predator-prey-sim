@@ -1653,7 +1653,7 @@ function drawThoughtBubble(ax, ay, text, name, accentColor) {
 // ── Live chat feed ──
 const chatEl = document.getElementById('chat-messages');
 const CHAT_MAX = 120;
-const CHAT_INTERVAL_MS = 2000; // one new message at most every 2 seconds
+const CHAT_INTERVAL_MS = 500; // one new message at most every 0.5 seconds
 let lastChatTime = 0;
 let chatUserScrolled = false;
 

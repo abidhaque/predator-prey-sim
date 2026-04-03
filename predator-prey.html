@@ -154,11 +154,6 @@
     .food-param .param-value { color: #fde047; }
 
     /* ── Population Graph ── */
-    #graph-section {
-      padding: 12px 18px;
-      border-bottom: 1px solid #162418;
-    }
-
     #graph-title {
       font-size: 0.62rem;
       font-weight: 700;
@@ -182,11 +177,11 @@
 
     #graph-canvas {
       width: 100%;
-      height: 100px;
+      height: 80px;
       display: block;
-      border-radius: 6px;
-      background: #060c08;
-      border: 1px solid #162418;
+      border-radius: 4px;
+      background: rgba(6,12,8,0.4);
+      border: 1px solid rgba(22,36,24,0.5);
     }
 
     #graph-note {
@@ -197,22 +192,17 @@
     }
 
     /* ── Stats ── */
-    #stats {
-      padding: 12px 18px;
-      border-bottom: 1px solid #162418;
-    }
-
     .stat-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 7px;
+      gap: 5px;
     }
 
     .stat-box {
-      background: #0d1812;
-      border: 1px solid #162418;
-      border-radius: 7px;
-      padding: 8px 10px;
+      background: rgba(13,24,18,0.5);
+      border: 1px solid rgba(22,36,24,0.4);
+      border-radius: 6px;
+      padding: 6px 8px;
       text-align: center;
     }
 
@@ -224,7 +214,7 @@
     }
 
     .stat-box .s-value {
-      font-size: 1.05rem;
+      font-size: 0.95rem;
       font-weight: 700;
       margin-top: 1px;
     }
@@ -238,17 +228,6 @@
     .s-score { color: #4ade80; }
 
     /* ── Score banner ── */
-    #score-banner {
-      margin: 10px 18px 0;
-      background: #0b1a10;
-      border: 1px solid #1e3a28;
-      border-radius: 8px;
-      padding: 8px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
     #score-banner .sb-label {
       font-size: 0.6rem;
       text-transform: uppercase;
@@ -257,16 +236,43 @@
     }
 
     #score-value {
-      font-size: 1.4rem;
+      font-size: 1.2rem;
       font-weight: 700;
       color: #4ade80;
       font-variant-numeric: tabular-nums;
     }
 
     #score-grade {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: #3a5540;
       margin-top: 1px;
+    }
+
+    /* ── Bottom-left HUD overlay ── */
+    #hud-overlay {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      width: 280px;
+      background: rgba(6,12,8,0.55);
+      border: 1px solid rgba(22,36,24,0.5);
+      border-radius: 10px;
+      padding: 12px 14px;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #score-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(11,26,16,0.4);
+      border: 1px solid rgba(30,58,40,0.4);
+      border-radius: 6px;
+      padding: 6px 10px;
     }
 
     /* ── Buttons ── */
@@ -830,41 +836,6 @@
     <div class="preset-slots" id="preset-slots"></div>
   </div>
 
-  <!-- Population graph -->
-  <div id="graph-section">
-    <div id="graph-title">
-      Population Over Time
-      <div id="graph-legend">
-        <div class="gl"><div class="gl-dot" style="background:#4ade80"></div>Prey</div>
-        <div class="gl"><div class="gl-dot" style="background:#f87171"></div>Pred</div>
-        <div class="gl"><div class="gl-dot" style="background:#fde047"></div>Food</div>
-      </div>
-    </div>
-    <canvas id="graph-canvas"></canvas>
-    <div id="graph-note">Watch for oscillation — the Lotka-Volterra cycle</div>
-  </div>
-
-  <!-- Stats -->
-  <div id="stats">
-    <div class="stat-grid">
-      <div class="stat-box"><div class="s-label">Prey</div><div class="s-value s-prey" id="stat-prey">—</div></div>
-      <div class="stat-box"><div class="s-label">Predators</div><div class="s-value s-pred" id="stat-pred">—</div></div>
-      <div class="stat-box"><div class="s-label">Food</div><div class="s-value s-food" id="stat-food">—</div></div>
-      <div class="stat-box"><div class="s-label">Generation</div><div class="s-value s-gen" id="stat-gen">—</div></div>
-      <div class="stat-box"><div class="s-label">FPS</div><div class="s-value s-fps" id="stat-fps">—</div></div>
-      <div class="stat-box"><div class="s-label">Phase</div><div class="s-value s-phase" id="stat-phase">—</div></div>
-    </div>
-  </div>
-
-  <!-- Oscillation score -->
-  <div id="score-banner">
-    <div>
-      <div class="sb-label">Oscillation Score</div>
-      <div id="score-value">—</div>
-      <div id="score-grade">Run the sim to score</div>
-    </div>
-  </div>
-
   <div class="btn-row">
     <button id="btn-pause">⏸ Pause</button>
     <button id="btn-reset">↺ Reset</button>
@@ -891,6 +862,36 @@
   </div>
 
   <div id="paused-badge">PAUSED</div>
+
+  <!-- Bottom-left HUD: stats + graph + score -->
+  <div id="hud-overlay">
+    <div id="graph-title">
+      Population Over Time
+      <div id="graph-legend">
+        <div class="gl"><div class="gl-dot" style="background:#4ade80"></div>Prey</div>
+        <div class="gl"><div class="gl-dot" style="background:#f87171"></div>Pred</div>
+        <div class="gl"><div class="gl-dot" style="background:#fde047"></div>Food</div>
+      </div>
+    </div>
+    <canvas id="graph-canvas"></canvas>
+    <div id="stats">
+      <div class="stat-grid">
+        <div class="stat-box"><div class="s-label">Prey</div><div class="s-value s-prey" id="stat-prey">—</div></div>
+        <div class="stat-box"><div class="s-label">Predators</div><div class="s-value s-pred" id="stat-pred">—</div></div>
+        <div class="stat-box"><div class="s-label">Food</div><div class="s-value s-food" id="stat-food">—</div></div>
+        <div class="stat-box"><div class="s-label">Generation</div><div class="s-value s-gen" id="stat-gen">—</div></div>
+        <div class="stat-box"><div class="s-label">FPS</div><div class="s-value s-fps" id="stat-fps">—</div></div>
+        <div class="stat-box"><div class="s-label">Phase</div><div class="s-value s-phase" id="stat-phase">—</div></div>
+      </div>
+    </div>
+    <div id="score-banner">
+      <div>
+        <div class="sb-label">Oscillation Score</div>
+        <div id="score-value">—</div>
+        <div id="score-grade">Run the sim to score</div>
+      </div>
+    </div>
+  </div>
 
   <div id="chat-panel">
     <div id="chat-header">

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Predator-Prey Ecosystem</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -662,6 +662,62 @@
     .chat-name.pred { color: #f87171; }
 
     .chat-text { color: #5a7a60; }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+      #sidebar {
+        width: 100%;
+        max-width: 100%;
+        z-index: 20;
+      }
+      #sidebar.collapsed {
+        transform: translateX(-100%);
+      }
+      #sidebar-toggle {
+        top: 10px;
+        left: 10px;
+        width: 32px;
+        height: 32px;
+        font-size: 1.1rem;
+        z-index: 25;
+      }
+      #hud-overlay {
+        width: calc(100vw - 32px);
+        left: 16px;
+        bottom: 12px;
+      }
+      #chat-panel { display: none; }
+      #info-overlay { display: none; }
+      .stat-box .s-value { font-size: 0.85rem; }
+    }
+
+    @media (max-width: 768px) and (orientation: portrait) {
+      #portrait-hint { display: flex; }
+    }
+
+    #portrait-hint {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(6,12,8,0.92);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: #4ade80;
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 32px;
+    }
+
+    #portrait-hint .hint-icon { font-size: 2.5rem; animation: rotateHint 1.5s ease-in-out infinite alternate; }
+    @keyframes rotateHint {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(90deg); }
+    }
+    #portrait-hint p { font-size: 0.82rem; color: #4a6650; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -892,6 +948,12 @@
 </div>
 
 <!-- ═══════════════════════════════════ CANVAS ═══════════════════════════════════ -->
+<div id="portrait-hint">
+  <div class="hint-icon">📱</div>
+  Rotate for the best experience
+  <p>Landscape mode gives you the full map</p>
+</div>
+
 <div id="canvas-wrap">
   <canvas id="sim-canvas"></canvas>
   <button id="sidebar-toggle" title="Toggle sidebar">‹</button>
@@ -2284,9 +2346,63 @@ document.getElementById('inspector-name').addEventListener('keydown', e => {
 // Click to select
 const sidebarEl = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('sidebar-toggle');
+
+// Auto-collapse sidebar on mobile
+if (window.innerWidth <= 768) {
+  sidebarEl.classList.add('collapsed');
+  toggleBtn.textContent = '›';
+}
+
 toggleBtn.addEventListener('click', () => {
   sidebarEl.classList.toggle('collapsed');
   toggleBtn.textContent = sidebarEl.classList.contains('collapsed') ? '›' : '‹';
+});
+
+// ── Touch support ──
+function canvasPos(touch) {
+  const rect = simCanvas.getBoundingClientRect();
+  return {
+    x: (touch.clientX - rect.left) * (simCanvas.width  / rect.width),
+    y: (touch.clientY - rect.top)  * (simCanvas.height / rect.height),
+  };
+}
+
+simCanvas.addEventListener('touchstart', e => {
+  const { x: mx, y: my } = canvasPos(e.touches[0]);
+  for (const c of corals) {
+    if (Math.hypot(mx - c.x, my - c.y) < c.r) {
+      draggingCoral = c;
+      dragOffX = mx - c.x;
+      dragOffY = my - c.y;
+      dragMoved = false;
+      e.preventDefault();
+      return;
+    }
+  }
+}, { passive: false });
+
+simCanvas.addEventListener('touchmove', e => {
+  if (!draggingCoral) return;
+  e.preventDefault();
+  const { x: mx, y: my } = canvasPos(e.touches[0]);
+  draggingCoral.x = Math.max(draggingCoral.r, Math.min(simCanvas.width  - draggingCoral.r, mx - dragOffX));
+  draggingCoral.y = Math.max(draggingCoral.r, Math.min(simCanvas.height - draggingCoral.r, my - dragOffY));
+  dragMoved = true;
+}, { passive: false });
+
+simCanvas.addEventListener('touchend', e => {
+  if (draggingCoral) { draggingCoral = null; return; }
+  if (dragMoved) { dragMoved = false; return; }
+  // Tap to select agent
+  const { x: mx, y: my } = canvasPos(e.changedTouches[0]);
+  if (corals.some(c => Math.hypot(mx - c.x, my - c.y) < c.r)) return;
+  let best = null, bestD = 60;
+  for (const p of [...prey, ...predators]) {
+    const d = Math.hypot(p.x - mx, p.y - my);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  selectedAgent = (best === selectedAgent) ? null : best;
+  updateInspector();
 });
 
 // ── Coral drag-and-drop ──

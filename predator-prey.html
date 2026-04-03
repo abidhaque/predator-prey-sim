@@ -1082,8 +1082,8 @@ function initCorals() {
       const a    = (i / 18) * Math.PI * 2 + Math.random() * 0.3;
       const dist = CORAL_R * (0.35 + Math.random() * 0.55);
       rocks.push({
-        x: cx + Math.cos(a) * dist,
-        y: cy + Math.sin(a) * dist,
+        dx: Math.cos(a) * dist,   // relative to coral centre
+        dy: Math.sin(a) * dist,
         r:   6 + Math.random() * 10,
         hue: 10 + Math.random() * 30,
         sat: 50 + Math.random() * 30,
@@ -1124,7 +1124,7 @@ function drawOneReef(c, t) {
   for (const rock of rocks) {
     ctx.save();
     ctx.beginPath();
-    ctx.arc(rock.x, rock.y, rock.r, 0, Math.PI * 2);
+    ctx.arc(cx + rock.dx, cy + rock.dy, rock.r, 0, Math.PI * 2);
     ctx.fillStyle = `hsl(${rock.hue}, ${rock.sat}%, 22%)`;
     ctx.fill();
     ctx.strokeStyle = `hsl(${rock.hue}, ${rock.sat}%, 38%)`;

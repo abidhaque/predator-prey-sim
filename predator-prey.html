@@ -472,6 +472,46 @@
       border: 1px solid #3a1e1e;
     }
 
+    .builtin-preset {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0d1e10;
+      border: 1px solid #2a4a1e;
+      border-radius: 6px;
+      padding: 7px 10px;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+
+    .builtin-preset-name {
+      font-size: 0.72rem;
+      color: #fde047;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .builtin-preset-desc {
+      font-size: 0.62rem;
+      color: #4a6640;
+      margin-top: 1px;
+    }
+
+    .builtin-preset-load {
+      flex-shrink: 0;
+      padding: 4px 10px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      border-radius: 4px;
+      border: 1px solid #4a7a20;
+      background: #1a3010;
+      color: #a3e635;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .builtin-preset-load:hover { border-color: #a3e635; }
+
     .preset-del:disabled {
       opacity: 0.15;
       cursor: default;
@@ -833,6 +873,13 @@
   <!-- Presets -->
   <div id="presets-section">
     <div class="section-title">Saved Presets</div>
+    <div class="builtin-preset">
+      <div>
+        <div class="builtin-preset-name">⭐ Stable Oscillations</div>
+        <div class="builtin-preset-desc">Textbook Lotka-Volterra cycles</div>
+      </div>
+      <button class="builtin-preset-load" id="btn-builtin-preset">Load</button>
+    </div>
     <div class="preset-slots" id="preset-slots"></div>
   </div>
 
@@ -2414,6 +2461,28 @@ function renderPresets() {
 }
 
 renderPresets();
+
+// ── Built-in stable oscillations preset ──
+const STABLE_PRESET = {
+  preyReproThreshold: 35,
+  preyFoodEnergy:     28,
+  preyEnergyDrain:    0.08,
+  preyFleeSpeed:      4.2,
+  predReproThreshold: 175,
+  predPreyEnergy:     75,
+  predEnergyDrain:    0.18,
+  predSpeed:          4.5,
+  maxFood:            300,
+  foodRegenRate:      2,
+  initPrey:           100,
+  initPred:           6,
+  numCorals:          2,
+};
+
+document.getElementById('btn-builtin-preset').addEventListener('click', () => {
+  applySettings(STABLE_PRESET);
+  init();
+});
 
 // ── Kick off ──
 init();

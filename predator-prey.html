@@ -257,12 +257,61 @@
       background: rgba(6,12,8,0.55);
       border: 1px solid rgba(22,36,24,0.5);
       border-radius: 10px;
-      padding: 12px 14px;
       backdrop-filter: blur(6px);
       pointer-events: none;
       display: flex;
       flex-direction: column;
+    }
+
+    #hud-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 12px;
+      cursor: pointer;
+      pointer-events: auto;
+      user-select: none;
+    }
+
+    #hud-toggle-label {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3a5540;
+    }
+
+    #hud-toggle-btn {
+      font-size: 0.65rem;
+      color: #3a5540;
+      transition: transform 0.2s;
+    }
+
+    #hud-body {
+      padding: 0 14px 12px;
+      display: flex;
+      flex-direction: column;
       gap: 10px;
+    }
+
+    #hud-body #graph-canvas {
+      display: block;
+    }
+
+    #hud-stats-score {
+      overflow: hidden;
+      transition: max-height 0.25s ease, opacity 0.2s;
+      max-height: 300px;
+      opacity: 1;
+    }
+
+    #hud-overlay.hud-collapsed #hud-stats-score {
+      max-height: 0;
+      opacity: 0;
+    }
+
+    #hud-overlay.hud-collapsed #hud-toggle-btn {
+      transform: rotate(180deg);
     }
 
     #score-banner {
@@ -974,6 +1023,11 @@
 
   <!-- Bottom-left HUD: stats + graph + score -->
   <div id="hud-overlay">
+    <div id="hud-toggle-row">
+      <span id="hud-toggle-label">Stats &amp; Graph</span>
+      <span id="hud-toggle-btn">▲</span>
+    </div>
+    <div id="hud-body">
     <div id="graph-title">
       Population Over Time
       <div id="graph-legend">
@@ -983,7 +1037,8 @@
       </div>
     </div>
     <canvas id="graph-canvas"></canvas>
-    <div id="stats">
+    <div id="hud-stats-score">
+    <div id="stats" style="margin-top:8px">
       <div class="stat-grid">
         <div class="stat-box"><div class="s-label">Prey</div><div class="s-value s-prey" id="stat-prey">—</div></div>
         <div class="stat-box"><div class="s-label">Predators</div><div class="s-value s-pred" id="stat-pred">—</div></div>
@@ -993,13 +1048,15 @@
         <div class="stat-box"><div class="s-label">Phase</div><div class="s-value s-phase" id="stat-phase">—</div></div>
       </div>
     </div>
-    <div id="score-banner">
+    <div id="score-banner" style="margin-top:8px">
       <div>
         <div class="sb-label">Oscillation Score</div>
         <div id="score-value">—</div>
         <div id="score-grade">Run the sim to score</div>
       </div>
     </div>
+    </div><!-- end hud-stats-score -->
+    </div><!-- end hud-body -->
   </div>
 
   <div id="chat-panel">
@@ -2348,10 +2405,18 @@ const sidebarEl = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('sidebar-toggle');
 
 // Auto-collapse sidebar on mobile
-if (window.innerWidth <= 768) {
+const isMobile = window.innerWidth <= 768;
+if (isMobile) {
   sidebarEl.classList.add('collapsed');
   toggleBtn.textContent = '›';
 }
+
+// HUD collapse toggle — collapsed by default on mobile
+const hudEl = document.getElementById('hud-overlay');
+if (isMobile) hudEl.classList.add('hud-collapsed');
+document.getElementById('hud-toggle-row').addEventListener('click', () => {
+  hudEl.classList.toggle('hud-collapsed');
+});
 
 toggleBtn.addEventListener('click', () => {
   sidebarEl.classList.toggle('collapsed');

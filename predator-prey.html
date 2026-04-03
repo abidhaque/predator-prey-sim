@@ -865,6 +865,24 @@ document.getElementById('sl-sim-speed').addEventListener('input', function() {
 });
 
 // ── Utility ──
+// ── Name generators ──
+const PREY_NAMES = [
+  'Gary','Finnegan','Blub','Swimmy','Nemo Jr.','Kevin','Dave',
+  'Bubbles','Splashy','Sir Flops','Guppy McFace','Captain Zoom',
+  'Speedboi','The Flash (lol)','Wigglesworth','Blinky','Lil Swimmer',
+  'Lenny','Gerald','Dory Jr.','Mr. Minnow','Zigzag',
+];
+const PRED_NAMES = [
+  'Chompy','Big Derek','The Destroyer','Jaws II','Reginald',
+  'Professor Munch','Death Bringer','Sharknado Jr.','Barry','The Void',
+  'Margaret','Lord Bitey','Steven (evil)','Annihilator','Big Hungry',
+  'Dread Fin','The Reckoning','Frank','Omega Nom','Terrorfish',
+];
+function autoName(isPred) {
+  const pool = isPred ? PRED_NAMES : PREY_NAMES;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 function vLimit(vx, vy, max) {
   const m = Math.hypot(vx, vy);
   return m > max ? [vx / m * max, vy / m * max] : [vx, vy];
@@ -1505,25 +1523,6 @@ class Predator {
 
 // ── Thought bubble helpers ──
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-// ── Name generators ──
-const PREY_NAMES = [
-  'Gary','Finnegan','Blub','Swimmy','Nemo Jr.','Kevin','Dave',
-  'Bubbles','Splashy','Sir Flops','Guppy McFace','Captain Zoom',
-  'Speedboi','The Flash (lol)','Wigglesworth','Blinky','Lil Swimmer',
-  'Lenny','Gerald','Dory Jr.','Mr. Minnow','Zigzag',
-];
-const PRED_NAMES = [
-  'Chompy','Big Derek','The Destroyer','Jaws II','Reginald',
-  'Professor Munch','Death Bringer','Sharknado Jr.','Barry','The Void',
-  'Margaret','Lord Bitey','Steven (evil)','Annihilator','Big Hungry',
-  'Dread Fin','The Reckoning','Frank','Omega Nom','Terrorfish',
-];
-
-function autoName(isPred) {
-  const pool = isPred ? PRED_NAMES : PREY_NAMES;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
 
 // ── Thought bubble — pager/SMS style, appears to the right of agent ──
 function drawThoughtBubble(ax, ay, text, name, accentColor) {

@@ -953,14 +953,17 @@ class Prey {
       }
     }
 
-    // Steer toward nearest coral when threatened and not already hiding
+    // Steer toward nearest coral when threatened — only if coral is within flee range
     if (fleeing && !hiding && !hungry && corals.length > 0) {
       const nc = nearestCoral(this.x, this.y);
-      const dx = nc.x - this.x, dy = nc.y - this.y;
-      let [cx, cy] = vSetMag(dx, dy, P.preyFleeSpeed);
-      cx -= this.vx; cy -= this.vy;
-      [cx, cy] = vLimit(cx, cy, 0.4);
-      fx += cx * 3; fy += cy * 3;
+      const distToCoral = Math.hypot(nc.x - this.x, nc.y - this.y);
+      if (distToCoral < P.predDetectRange * 2.5) {
+        const dx = nc.x - this.x, dy = nc.y - this.y;
+        let [cx, cy] = vSetMag(dx, dy, P.preyFleeSpeed);
+        cx -= this.vx; cy -= this.vy;
+        [cx, cy] = vLimit(cx, cy, 0.4);
+        fx += cx * 3; fy += cy * 3;
+      }
     }
 
     // Leave coral when too hungry

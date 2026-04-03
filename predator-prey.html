@@ -510,6 +510,78 @@
       pointer-events: none;
       display: none;
     }
+
+    /* ── Live Chat Panel ── */
+    #chat-panel {
+      width: 230px;
+      flex-shrink: 0;
+      background: #0b1410;
+      border-left: 1px solid #162418;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #chat-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid #162418;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3a5540;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #chat-header .chat-live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #4ade80;
+      animation: chatPulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes chatPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    #chat-messages::-webkit-scrollbar { width: 3px; }
+    #chat-messages::-webkit-scrollbar-track { background: transparent; }
+    #chat-messages::-webkit-scrollbar-thumb { background: #1e3028; border-radius: 2px; }
+
+    .chat-msg {
+      padding: 3px 12px;
+      font-size: 0.7rem;
+      line-height: 1.45;
+      transition: background 0.1s;
+      word-break: break-word;
+    }
+
+    .chat-msg:hover { background: #0d1a12; }
+
+    .chat-name {
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.68rem;
+      margin-right: 5px;
+    }
+
+    .chat-name:hover { text-decoration: underline; }
+    .chat-name.prey { color: #4ade80; }
+    .chat-name.pred { color: #f87171; }
+
+    .chat-text { color: #5a7a60; }
   </style>
 </head>
 <body>
@@ -784,6 +856,15 @@
   </div>
 
   <div id="paused-badge">PAUSED</div>
+</div>
+
+<!-- ═══════════════════════════════════ CHAT PANEL ═══════════════════════════════════ -->
+<div id="chat-panel">
+  <div id="chat-header">
+    <div class="chat-live-dot"></div>
+    Live Feed
+  </div>
+  <div id="chat-messages"></div>
 </div>
 
 <script>
@@ -1101,6 +1182,9 @@ class Prey {
     this.generation = 0;
     this.name     = autoName(false);
     this.thought  = '';
+    this.thoughtFrameCd = Math.floor(Math.random() * 120);
+    // State flags set each tick for use by thought system
+    this.isFleeing = false; this.isInCoral = false; this.isHungry = false; this.neighN = 0;
   }
 
   update(preyArr, predArr, foodArr) {
@@ -1263,28 +1347,11 @@ class Prey {
     if (this.x < -10) this.x = W + 10; if (this.x > W + 10) this.x = -10;
     if (this.y < -10) this.y = H + 10; if (this.y > H + 10) this.y = -10;
 
-    // Update thought only for selected agent
-    if (this === selectedAgent) {
-      const eRat = this.energy / PREY_MAX_E;
-      if (inCoral(this.x, this.y) && fleeing)
-        this.thought = pick(['phew... safe in here 😮‍💨', 'can\'t catch me in here!!', 'lalalala not listening', 'this is fine. this is fine.', 'stay veeeery still...']);
-      else if (inCoral(this.x, this.y) && hungry)
-        this.thought = pick(['ok I NEED to eat something', 'stomach is literally eating itself', 'maybe just a quick dash for food...', 'dying is worse than being eaten. probably.']);
-      else if (fleeing)
-        this.thought = pick(['NOPE NOPE NOPE NOPE', 'NOT TODAY BUDDY', 'legs don\'t fail me now!!', 'I am too young and delicious to die!!', 'ZIG ZAG ZIG ZAG ZIG ZAG']);
-      else if (eRat < 0.2)
-        this.thought = pick(['send help. and snacks.', 'I am literally dying here', 'must... find... food...', 'everything hurts and I\'m dying 😭', 'is that food? please be food']);
-      else if (eRat < 0.45)
-        this.thought = pick(['kinda hungry ngl', 'could go for a snack rn', 'where\'s the food at tho', 'my tummy is making Sounds']);
-      else if (this.cooldown < 10 && eRat > 0.8)
-        this.thought = pick(['time to make babies I guess 🤷', 'feeling frisky today', 'reproduction time babyyy', 'my genes must survive!!']);
-      else if (neighN > 4)
-        this.thought = pick(['love my little gang 🥹', 'safety in numbers baybee', 'squad goals fr fr', 'these are my people']);
-      else if (eRat > 0.85)
-        this.thought = pick(['life is GOOD', 'absolutely thriving rn', 'top of the food chain... wait', 'serotonin: maximum', '✨ living my best life ✨']);
-      else
-        this.thought = pick(['just vibin\'', 'la di da di da', 'nice day for a swim', 'nothing to see here', 'ordinary fish things 🐟']);
-    }
+    // Store state for frame-level thought system
+    this.isFleeing = fleeing;
+    this.isInCoral = hiding;
+    this.isHungry  = hungry;
+    this.neighN    = neighN;
   }
 
   draw(selected) {
@@ -1350,6 +1417,9 @@ class Predator {
     this.generation = 0;
     this.name     = autoName(true);
     this.thought  = '';
+    this.thoughtFrameCd = Math.floor(Math.random() * 120);
+    // State flags set each tick for use by thought system
+    this.hasTarget = false; this.targetClose = false;
   }
 
   update(preyArr, predArr) {
@@ -1439,23 +1509,9 @@ class Predator {
     if (this.x < -20) this.x = W + 20; if (this.x > W + 20) this.x = -20;
     if (this.y < -20) this.y = H + 20; if (this.y > H + 20) this.y = -20;
 
-    if (this === selectedAgent) {
-      const eRat = this.energy / PRED_MAX_E;
-      if (target && targetDist < 30)
-        this.thought = pick(['GOTCHA!!', 'nom nom nom 😈', 'you had ONE job', 'nothing personal kid', 'dinner is served 🍽️']);
-      else if (target)
-        this.thought = pick(['I see you buddy 😏', 'you can\'t hide forever', 'just keep swimming... toward you', 'I\'m not chasing, I\'m speedwalking', 'oh don\'t mind me just coming over']);
-      else if (eRat < 0.2)
-        this.thought = pick(['WHERE IS EVERYONE', 'I\'m literally wasting away here', 'my kingdom for a snack', 'starvation arc is not a fun arc', 'I am the danger. A hungry danger.']);
-      else if (eRat < 0.4)
-        this.thought = pick(['getting a little peckish ngl', 'could eat', 'the hunger is setting in', 'where did all the fish go???']);
-      else if (this.cooldown < 20 && eRat > 0.75)
-        this.thought = pick(['spreading my genes >:)', 'legacy time babyyyy', 'the world needs more of me', 'mini-me incoming!!']);
-      else if (eRat > 0.85)
-        this.thought = pick(['apex predator hours 😤', 'I am built different', 'nobody can stop me', 'feeling POWERFUL today', 'this is MY ocean']);
-      else
-        this.thought = pick(['just patrolling', 'very normal predator behaviour', 'oh what\'s over there', '*ominous circling*', 'la la la looking for prey la la la']);
-    }
+    // Store state for frame-level thought system
+    this.hasTarget   = !!target;
+    this.targetClose = !!(target && targetDist < 30);
   }
 
   draw(selected) {
@@ -1595,6 +1651,97 @@ function drawThoughtBubble(ax, ay, text, name, accentColor) {
     ctx.fillText(lines[i], rbx + pad, by + 18 + pad + (i + 0.75) * lh);
   }
   ctx.restore();
+}
+
+// ── Live chat feed ──
+const chatEl = document.getElementById('chat-messages');
+const CHAT_MAX = 120; // max DOM nodes to keep
+
+function addChatMessage(agent, isPred) {
+  const msgEl = document.createElement('div');
+  msgEl.className = 'chat-msg';
+
+  const nameEl = document.createElement('span');
+  nameEl.className = 'chat-name ' + (isPred ? 'pred' : 'prey');
+  nameEl.textContent = agent.name + ':';
+  nameEl.addEventListener('click', () => {
+    selectedAgent = agent;
+    updateInspector();
+  });
+
+  const textEl = document.createElement('span');
+  textEl.className = 'chat-text';
+  textEl.textContent = ' ' + agent.thought;
+
+  msgEl.appendChild(nameEl);
+  msgEl.appendChild(textEl);
+  chatEl.appendChild(msgEl);
+
+  // Trim old messages
+  while (chatEl.children.length > CHAT_MAX) chatEl.removeChild(chatEl.firstChild);
+
+  // Auto-scroll to bottom
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function computePreyThought(p) {
+  const eRat = p.energy / PREY_MAX_E;
+  if (p.isInCoral && p.isFleeing)
+    p.thought = pick(['phew... safe in here 😮‍💨', 'can\'t catch me in here!!', 'lalalala not listening', 'this is fine. this is fine.', 'stay veeeery still...']);
+  else if (p.isInCoral && p.isHungry)
+    p.thought = pick(['ok I NEED to eat something', 'stomach is literally eating itself', 'maybe just a quick dash for food...', 'dying is worse than being eaten. probably.']);
+  else if (p.isFleeing)
+    p.thought = pick(['NOPE NOPE NOPE NOPE', 'NOT TODAY BUDDY', 'legs don\'t fail me now!!', 'I am too young and delicious to die!!', 'ZIG ZAG ZIG ZAG ZIG ZAG']);
+  else if (eRat < 0.2)
+    p.thought = pick(['send help. and snacks.', 'I am literally dying here', 'must... find... food...', 'everything hurts and I\'m dying 😭', 'is that food? please be food']);
+  else if (eRat < 0.45)
+    p.thought = pick(['kinda hungry ngl', 'could go for a snack rn', 'where\'s the food at tho', 'my tummy is making Sounds']);
+  else if (p.cooldown < 10 && eRat > 0.8)
+    p.thought = pick(['time to make babies I guess 🤷', 'feeling frisky today', 'reproduction time babyyy', 'my genes must survive!!']);
+  else if (p.neighN > 4)
+    p.thought = pick(['love my little gang 🥹', 'safety in numbers baybee', 'squad goals fr fr', 'these are my people']);
+  else if (eRat > 0.85)
+    p.thought = pick(['life is GOOD', 'absolutely thriving rn', 'top of the food chain... wait', 'serotonin: maximum', '✨ living my best life ✨']);
+  else
+    p.thought = pick(['just vibin\'', 'la di da di da', 'nice day for a swim', 'nothing to see here', 'ordinary fish things 🐟']);
+}
+
+function computePredThought(p) {
+  const eRat = p.energy / PRED_MAX_E;
+  if (p.targetClose)
+    p.thought = pick(['GOTCHA!!', 'nom nom nom 😈', 'you had ONE job', 'nothing personal kid', 'dinner is served 🍽️']);
+  else if (p.hasTarget)
+    p.thought = pick(['I see you buddy 😏', 'you can\'t hide forever', 'just keep swimming... toward you', 'I\'m not chasing, I\'m speedwalking', 'oh don\'t mind me just coming over']);
+  else if (eRat < 0.2)
+    p.thought = pick(['WHERE IS EVERYONE', 'I\'m literally wasting away here', 'my kingdom for a snack', 'starvation arc is not a fun arc', 'I am the danger. A hungry danger.']);
+  else if (eRat < 0.4)
+    p.thought = pick(['getting a little peckish ngl', 'could eat', 'the hunger is setting in', 'where did all the fish go???']);
+  else if (p.cooldown < 20 && eRat > 0.75)
+    p.thought = pick(['spreading my genes >:)', 'legacy time babyyyy', 'the world needs more of me', 'mini-me incoming!!']);
+  else if (eRat > 0.85)
+    p.thought = pick(['apex predator hours 😤', 'I am built different', 'nobody can stop me', 'feeling POWERFUL today', 'this is MY ocean']);
+  else
+    p.thought = pick(['just patrolling', 'very normal predator behaviour', 'oh what\'s over there', '*ominous circling*', 'la la la looking for prey la la la']);
+}
+
+// Called once per animation frame — rate-limited by thoughtFrameCd (frames, not ticks)
+function updateAllThoughts() {
+  for (const p of prey) {
+    if (!p.alive) continue;
+    if (--p.thoughtFrameCd > 0) continue;
+    p.thoughtFrameCd = 100 + Math.floor(Math.random() * 100); // ~1.7–3.3s at 60fps
+    const prev = p.thought;
+    computePreyThought(p);
+    if (p.thought !== prev) addChatMessage(p, false);
+  }
+  for (const p of predators) {
+    if (!p.alive) continue;
+    if (--p.thoughtFrameCd > 0) continue;
+    p.thoughtFrameCd = 100 + Math.floor(Math.random() * 100);
+    const prev = p.thought;
+    computePredThought(p);
+    if (p.thought !== prev) addChatMessage(p, true);
+  }
 }
 
 // ── State ──
@@ -1842,6 +1989,7 @@ function loop() {
     }
 
     } // end steps loop
+    updateAllThoughts();
     updateStats();
     checkExtinction();
     if (tick % 60 === 0) updateScore();

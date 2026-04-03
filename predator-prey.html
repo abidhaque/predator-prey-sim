@@ -1022,7 +1022,7 @@
   <div id="paused-badge">PAUSED</div>
 
   <!-- Bottom-left HUD: stats + graph + score -->
-  <div id="hud-overlay">
+  <div id="hud-overlay" class="hud-collapsed">
     <div id="hud-toggle-row">
       <span id="hud-toggle-label">Stats &amp; Graph</span>
       <span id="hud-toggle-btn">▲</span>
@@ -2411,9 +2411,7 @@ if (isMobile) {
   toggleBtn.textContent = '›';
 }
 
-// HUD collapse toggle — collapsed by default always
 const hudEl = document.getElementById('hud-overlay');
-hudEl.classList.add('hud-collapsed');
 document.getElementById('hud-toggle-row').addEventListener('click', () => {
   hudEl.classList.toggle('hud-collapsed');
 });

@@ -1729,7 +1729,7 @@ function updateAllThoughts() {
   for (const p of prey) {
     if (!p.alive) continue;
     if (--p.thoughtFrameCd > 0) continue;
-    p.thoughtFrameCd = 600 + Math.floor(Math.random() * 360); // ~10–16s at 60fps
+    p.thoughtFrameCd = 7200 + Math.floor(Math.random() * 360); // ~10–16s at 60fps
     const prev = p.thought;
     computePreyThought(p);
     if (p.thought !== prev) addChatMessage(p, false);

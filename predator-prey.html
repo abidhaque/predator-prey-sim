@@ -287,6 +287,73 @@
 
     button:hover { opacity: 0.8; }
 
+    /* ── Agent inspector ── */
+    #inspector {
+      padding: 12px 18px;
+      border-bottom: 1px solid #162418;
+      display: none;
+    }
+
+    #inspector .section-title {
+      font-size: 0.61rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3a5540;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #inspector-type {
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    #inspector-name-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    #inspector-name {
+      flex: 1;
+      background: #0b1410;
+      border: 1px solid #1e3a28;
+      border-radius: 5px;
+      color: #b8d4b8;
+      font-size: 0.8rem;
+      padding: 5px 9px;
+      outline: none;
+    }
+
+    #inspector-name:focus { border-color: #4ade80; }
+
+    #inspector-name-set {
+      padding: 5px 10px;
+      background: #0d2016;
+      color: #4ade80;
+      border: 1px solid #1a3520;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #inspector-thought {
+      margin-top: 10px;
+      background: #0b1a10;
+      border: 1px solid #1a3020;
+      border-radius: 7px;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      color: #8aaa8a;
+      min-height: 36px;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
     /* ── Presets ── */
     #presets-section {
       padding: 12px 18px;
@@ -627,6 +694,19 @@
       </div>
       <input type="range" id="sl-init-pred" min="1" max="40" step="1" value="8" />
     </div>
+  </div>
+
+  <!-- Agent inspector -->
+  <div id="inspector">
+    <div class="section-title">
+      Selected Agent
+      <span id="inspector-type"></span>
+    </div>
+    <div id="inspector-name-row">
+      <input id="inspector-name" type="text" placeholder="Give them a name…" maxlength="24" />
+      <button id="inspector-name-set">Name</button>
+    </div>
+    <div id="inspector-thought">Click an agent to inspect it.</div>
   </div>
 
   <!-- Presets -->
@@ -983,8 +1063,10 @@ class Prey {
     this.alive    = true;
     this.hue      = rand(160, 190);
     this.sz       = rand(4.5, 6);
-    this.cooldown = rand(0, 60) | 0;  // stagger initial reproduction
+    this.cooldown = rand(0, 60) | 0;
     this.generation = 0;
+    this.name     = null;
+    this.thought  = '';
   }
 
   update(preyArr, predArr, foodArr) {
@@ -1093,9 +1175,10 @@ class Prey {
     }
 
     // 3. Boids flocking (moderate priority)
+    let neighN = 0;
     if (!fleeing || closestThreat > P.predDetectRange * 0.4) {
       let sx = 0, sy = 0, ax = 0, ay = 0, cx = 0, cy = 0;
-      let sepN = 0, neighN = 0;
+      let sepN = 0;
 
       for (const o of preyArr) {
         if (o === this || !o.alive) continue;
@@ -1145,6 +1228,29 @@ class Prey {
     const W = simCanvas.width, H = simCanvas.height;
     if (this.x < -10) this.x = W + 10; if (this.x > W + 10) this.x = -10;
     if (this.y < -10) this.y = H + 10; if (this.y > H + 10) this.y = -10;
+
+    // Update thought (only for named or selected agents to save CPU)
+    if (this.name || this === selectedAgent) {
+      const eRat = this.energy / PREY_MAX_E;
+      if (inCoral(this.x, this.y) && fleeing)
+        this.thought = pick(['phew... safe in here 😮‍💨', 'can\'t catch me in here!!', 'lalalala not listening', 'this is fine. this is fine.', 'stay veeeery still...']);
+      else if (inCoral(this.x, this.y) && hungry)
+        this.thought = pick(['ok I NEED to eat something', 'stomach is literally eating itself', 'maybe just a quick dash for food...', 'dying is worse than being eaten. probably.']);
+      else if (fleeing)
+        this.thought = pick(['NOPE NOPE NOPE NOPE', 'NOT TODAY BUDDY', 'legs don\'t fail me now!!', 'I am too young and delicious to die!!', 'ZIG ZAG ZIG ZAG ZIG ZAG']);
+      else if (eRat < 0.2)
+        this.thought = pick(['send help. and snacks.', 'I am literally dying here', 'must... find... food...', 'everything hurts and I\'m dying 😭', 'is that food? please be food']);
+      else if (eRat < 0.45)
+        this.thought = pick(['kinda hungry ngl', 'could go for a snack rn', 'where\'s the food at tho', 'my tummy is making Sounds']);
+      else if (this.cooldown < 10 && eRat > 0.8)
+        this.thought = pick(['time to make babies I guess 🤷', 'feeling frisky today', 'reproduction time babyyy', 'my genes must survive!!']);
+      else if (neighN > 4)
+        this.thought = pick(['love my little gang 🥹', 'safety in numbers baybee', 'squad goals fr fr', 'these are my people']);
+      else if (eRat > 0.85)
+        this.thought = pick(['life is GOOD', 'absolutely thriving rn', 'top of the food chain... wait', 'serotonin: maximum', '✨ living my best life ✨']);
+      else
+        this.thought = pick(['just vibin\'', 'la di da di da', 'nice day for a swim', 'nothing to see here', 'ordinary fish things 🐟']);
+    }
   }
 
   draw(selected) {
@@ -1191,6 +1297,8 @@ class Prey {
     }
 
     ctx.restore();
+
+    if (this.name) drawThoughtBubble(this.x, this.y - sz - 4, this.thought, this.name, '#4ade80');
   }
 }
 
@@ -1206,6 +1314,8 @@ class Predator {
     this.cooldown = rand(0, 120) | 0;
     this.sz       = rand(9, 12);
     this.generation = 0;
+    this.name     = null;
+    this.thought  = '';
   }
 
   update(preyArr, predArr) {
@@ -1294,6 +1404,24 @@ class Predator {
     const W = simCanvas.width, H = simCanvas.height;
     if (this.x < -20) this.x = W + 20; if (this.x > W + 20) this.x = -20;
     if (this.y < -20) this.y = H + 20; if (this.y > H + 20) this.y = -20;
+
+    if (this.name || this === selectedAgent) {
+      const eRat = this.energy / PRED_MAX_E;
+      if (target && targetDist < 30)
+        this.thought = pick(['GOTCHA!!', 'nom nom nom 😈', 'you had ONE job', 'nothing personal kid', 'dinner is served 🍽️']);
+      else if (target)
+        this.thought = pick(['I see you buddy 😏', 'you can\'t hide forever', 'just keep swimming... toward you', 'I\'m not chasing, I\'m speedwalking', 'oh don\'t mind me just coming over']);
+      else if (eRat < 0.2)
+        this.thought = pick(['WHERE IS EVERYONE', 'I\'m literally wasting away here', 'my kingdom for a snack', 'starvation arc is not a fun arc', 'I am the danger. A hungry danger.']);
+      else if (eRat < 0.4)
+        this.thought = pick(['getting a little peckish ngl', 'could eat', 'the hunger is setting in', 'where did all the fish go???']);
+      else if (this.cooldown < 20 && eRat > 0.75)
+        this.thought = pick(['spreading my genes >:)', 'legacy time babyyyy', 'the world needs more of me', 'mini-me incoming!!']);
+      else if (eRat > 0.85)
+        this.thought = pick(['apex predator hours 😤', 'I am built different', 'nobody can stop me', 'feeling POWERFUL today', 'this is MY ocean']);
+      else
+        this.thought = pick(['just patrolling', 'very normal predator behaviour', 'oh what\'s over there', '*ominous circling*', 'la la la looking for prey la la la']);
+    }
   }
 
   draw(selected) {
@@ -1354,7 +1482,74 @@ class Predator {
     }
 
     ctx.restore();
+
+    if (this.name) drawThoughtBubble(this.x, this.y - sz - 4, this.thought, this.name, '#f87171');
   }
+}
+
+// ── Thought bubble helpers ──
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function drawThoughtBubble(ax, ay, text, name, accentColor) {
+  if (!text) return;
+  ctx.save();
+  ctx.font = 'bold 10px "Segoe UI", system-ui, sans-serif';
+  const maxW  = 160;
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (ctx.measureText(test).width > maxW - 16 && line) { lines.push(line); line = w; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+
+  const lh  = 14;
+  const pad = 8;
+  const bw  = Math.min(maxW, Math.max(...lines.map(l => ctx.measureText(l).width)) + pad * 2);
+  const bh  = lines.length * lh + pad * 2;
+  const bx  = ax - bw / 2;
+  const by  = ay - bh - 14;
+
+  // Bubble
+  ctx.beginPath();
+  const r = 7;
+  ctx.moveTo(bx + r, by);
+  ctx.lineTo(bx + bw - r, by);
+  ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + r);
+  ctx.lineTo(bx + bw, by + bh - r);
+  ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - r, by + bh);
+  // Tail
+  ctx.lineTo(ax + 6, by + bh);
+  ctx.lineTo(ax, ay);
+  ctx.lineTo(ax - 6, by + bh);
+  ctx.lineTo(bx + r, by + bh);
+  ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - r);
+  ctx.lineTo(bx, by + r);
+  ctx.quadraticCurveTo(bx, by, bx + r, by);
+  ctx.closePath();
+  ctx.fillStyle   = 'rgba(8, 20, 12, 0.92)';
+  ctx.fill();
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth   = 1.2;
+  ctx.globalAlpha = 0.85;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Name tag
+  ctx.font      = `bold 9px "Segoe UI", system-ui, sans-serif`;
+  ctx.fillStyle = accentColor;
+  ctx.textAlign = 'center';
+  ctx.fillText(name, ax, by - 2);
+
+  // Text
+  ctx.font      = '10px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = '#c8e8c8';
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], ax, by + pad + (i + 0.75) * lh);
+  }
+  ctx.restore();
 }
 
 // ── State ──
@@ -1602,6 +1797,11 @@ function loop() {
     updateStats();
     checkExtinction();
     if (tick % 60 === 0) updateScore();
+    // Deselect if agent died; refresh inspector thought
+    if (selectedAgent && !selectedAgent.alive) { selectedAgent = null; updateInspector(); }
+    if (selectedAgent && tick % 12 === 0) {
+      document.getElementById('inspector-thought').textContent = selectedAgent.thought || '...';
+    }
   }
 
   draw();
@@ -1769,6 +1969,31 @@ document.getElementById('btn-submit').addEventListener('click', () => {
   window.open(issueURL, '_blank');
 });
 
+// ── Inspector panel ──
+function updateInspector() {
+  const panel = document.getElementById('inspector');
+  if (!selectedAgent) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  const isPred = predators.includes(selectedAgent);
+  document.getElementById('inspector-type').textContent = isPred ? '🔴 Predator' : '🟢 Prey';
+  document.getElementById('inspector-type').style.color = isPred ? '#f87171' : '#4ade80';
+  document.getElementById('inspector-name').value = selectedAgent.name || '';
+  document.getElementById('inspector-thought').textContent = selectedAgent.thought || '...';
+}
+
+document.getElementById('inspector-name-set').addEventListener('click', () => {
+  if (!selectedAgent) return;
+  const val = document.getElementById('inspector-name').value.trim();
+  selectedAgent.name = val || null;
+});
+
+document.getElementById('inspector-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('inspector-name-set').click();
+});
+
 // Click to select
 simCanvas.addEventListener('click', e => {
   const rect = simCanvas.getBoundingClientRect();
@@ -1780,6 +2005,7 @@ simCanvas.addEventListener('click', e => {
     if (d < bestD) { bestD = d; best = p; }
   }
   selectedAgent = (best === selectedAgent) ? null : best;
+  updateInspector();
 });
 
 window.addEventListener('resize', () => {

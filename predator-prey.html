@@ -934,7 +934,7 @@ class Prey {
     let fleeing = false;
     let closestThreat = Infinity;
     const hiding = inCoral(this.x, this.y);
-    const hungry = this.energy < PREY_MAX_E * CORAL.hungerLeave;
+    const hungry = this.energy < PREY_MAX_E * CORAL_HUNGER;
 
     // 1. Flee predators / seek coral (dominant force)
     for (const pred of predArr) {

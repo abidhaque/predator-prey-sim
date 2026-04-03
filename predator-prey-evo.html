@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evolutionary Predator-Prey Ecosystem</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #060c08;
+      color: #b8d4b8;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #sidebar {
+      width: 308px;
+      flex-shrink: 0;
+      background: #0b1410;
+      border-right: 1px solid #162418;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    #sidebar-header {
+      padding: 16px 18px 11px;
+      border-bottom: 1px solid #162418;
+      background: #0d1812;
+    }
+
+    #sidebar-header h1 { font-size: 1rem; font-weight: 700; color: #4ade80; }
+    #sidebar-header p  { margin-top: 4px; font-size: 0.71rem; color: #4a6650; line-height: 1.5; }
+
+    .section { padding: 12px 18px; border-bottom: 1px solid #162418; }
+
+    .section-title {
+      font-size: 0.61rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: #3a5540; margin-bottom: 11px;
+    }
+
+    .param-row { margin-bottom: 12px; }
+    .param-row:last-child { margin-bottom: 0; }
+
+    .param-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .param-name  { font-size: 0.77rem; color: #8aaa8a; }
+    .param-value { font-size: 0.77rem; font-weight: 700; color: #4ade80; min-width: 30px; text-align: right; }
+    .param-hint  { font-size: 0.64rem; color: #3a5540; margin-top: 2px; line-height: 1.4; }
+
+    input[type="range"] {
+      -webkit-appearance: none; width: 100%; height: 4px;
+      border-radius: 2px; background: #162418; outline: none; cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 13px; height: 13px;
+      border-radius: 50%; background: #22c55e; border: 2px solid #4ade80; cursor: pointer;
+    }
+
+    .prey-param input[type="range"] { background: #0d2016; }
+    .prey-param input[type="range"]::-webkit-slider-thumb { background: #22c55e; border-color: #86efac; }
+    .prey-param .param-value { color: #4ade80; }
+
+    .pred-param input[type="range"] { background: #200d0d; }
+    .pred-param input[type="range"]::-webkit-slider-thumb { background: #ef4444; border-color: #fca5a5; }
+    .pred-param .param-value { color: #f87171; }
+
+    .food-param input[type="range"] { background: #1a1a08; }
+    .food-param input[type="range"]::-webkit-slider-thumb { background: #eab308; border-color: #fde047; }
+    .food-param .param-value { color: #fde047; }
+
+    .evo-param input[type="range"] { background: #161025; }
+    .evo-param input[type="range"]::-webkit-slider-thumb { background: #a78bfa; border-color: #c4b5fd; }
+    .evo-param .param-value { color: #c4b5fd; }
+
+    /* Evolution tracker */
+    #evo-tracker { padding: 12px 18px; border-bottom: 1px solid #162418; }
+
+    .evo-header {
+      font-size: 0.61rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: #3a5540; margin-bottom: 10px;
+    }
+
+    .evo-group { margin-bottom: 10px; }
+    .evo-group:last-child { margin-bottom: 0; }
+
+    .evo-group-label {
+      font-size: 0.64rem; font-weight: 700;
+      color: #4a6650; margin-bottom: 5px;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+
+    .evo-row {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 5px; font-size: 0.72rem;
+    }
+
+    .evo-name { color: #6a8a6a; flex: 0 0 82px; font-size: 0.68rem; }
+
+    .evo-bar-wrap {
+      flex: 1; height: 5px; background: #162418;
+      border-radius: 3px; overflow: visible; position: relative;
+    }
+
+    .evo-bar-init {
+      position: absolute; top: -1px; bottom: -1px;
+      width: 2px; background: #3a5540; z-index: 2;
+    }
+
+    .evo-bar-fill {
+      height: 100%; border-radius: 3px;
+      transition: width 0.3s ease;
+      position: relative; z-index: 1;
+    }
+
+    .evo-val { font-size: 0.68rem; font-weight: 700; flex: 0 0 34px; text-align: right; }
+    .evo-arrow { font-size: 0.65rem; flex: 0 0 12px; text-align: center; }
+
+    .arrow-up   { color: #34d399; }
+    .arrow-down { color: #f87171; }
+    .arrow-flat { color: #3a5540; }
+
+    .evo-note { font-size: 0.62rem; color: #3a5540; margin-top: 8px; line-height: 1.5; }
+
+    /* Graph */
+    #graph-section { padding: 11px 18px; border-bottom: 1px solid #162418; }
+
+    #graph-title {
+      font-size: 0.61rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: #3a5540; margin-bottom: 7px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    #graph-legend { display: flex; gap: 8px; font-size: 0.62rem; }
+    .gl { display: flex; align-items: center; gap: 3px; }
+    .gl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+    #graph-canvas {
+      width: 100%; height: 90px; display: block;
+      border-radius: 5px; background: #060c08; border: 1px solid #162418;
+    }
+
+    /* Stats */
+    #stats { padding: 11px 18px; border-bottom: 1px solid #162418; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+
+    .stat-box {
+      background: #0d1812; border: 1px solid #162418;
+      border-radius: 6px; padding: 7px 9px; text-align: center;
+    }
+
+    .stat-box .s-label { font-size: 0.59rem; text-transform: uppercase; letter-spacing: 0.07em; color: #3a5540; }
+    .stat-box .s-value { font-size: 1rem; font-weight: 700; margin-top: 1px; }
+    .s-prey { color: #4ade80; } .s-pred { color: #f87171; } .s-food { color: #fde047; }
+    .s-gen  { color: #67e8f9; } .s-fps  { color: #a78bfa; } .s-phase { color: #fb923c; }
+
+    .btn-row {
+      display: flex; gap: 8px; padding: 11px 18px;
+      margin-top: auto; border-top: 1px solid #162418;
+    }
+
+    button {
+      flex: 1; padding: 8px 0; border: none;
+      border-radius: 6px; font-size: 0.76rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+    }
+    button:active { transform: scale(0.97); }
+
+    #btn-pause { background: #0d2016; color: #4ade80; border: 1px solid #1a3520; }
+    #btn-reset { background: #162418; color: #8aaa8a; border: 1px solid #1e3020; }
+    button:hover { opacity: 0.8; }
+
+    #canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+    canvas { display: block; }
+    #sim-canvas { width: 100%; height: 100%; }
+
+    #info-overlay {
+      position: absolute; top: 14px; right: 14px;
+      background: rgba(6,12,8,0.82); border: 1px solid #162418;
+      border-radius: 9px; padding: 10px 14px;
+      font-size: 0.68rem; line-height: 1.9;
+      pointer-events: none; backdrop-filter: blur(4px);
+    }
+
+    .oi-row { display: flex; align-items: center; gap: 6px; }
+    .oi-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    #legend-color {
+      position: absolute; bottom: 14px; right: 14px;
+      background: rgba(6,12,8,0.82); border: 1px solid #162418;
+      border-radius: 9px; padding: 10px 14px;
+      font-size: 0.66rem; line-height: 1.8;
+      pointer-events: none; backdrop-filter: blur(4px);
+    }
+
+    .lc-row { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+    .lc-grad { width: 60px; height: 8px; border-radius: 4px; flex-shrink: 0; }
+
+    #extinction-overlay {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      background: rgba(6,12,8,0.92); border: 1px solid #2a4030;
+      border-radius: 14px; padding: 20px 34px; text-align: center; display: none;
+      pointer-events: none;
+    }
+    #extinction-overlay h2 { font-size: 0.95rem; margin-bottom: 5px; }
+    #extinction-overlay p  { font-size: 0.72rem; color: #4a6650; }
+
+    #paused-badge {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      background: rgba(6,12,8,0.88); border: 1px solid #1a3020;
+      border-radius: 12px; padding: 12px 26px;
+      font-size: 1rem; font-weight: 700; color: #4ade80;
+      pointer-events: none; display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>Evolutionary Ecosystem</h1>
+    <p>Every behavioral parameter is a heritable gene. Sliders set initial values — natural selection drifts them from there. All genes evolvable.</p>
+  </div>
+
+  <!-- Evolution controls -->
+  <div class="section">
+    <div class="section-title">Evolution</div>
+
+    <div class="param-row evo-param">
+      <div class="param-label">
+        <span class="param-name">Mutation Rate</span>
+        <span class="param-value" id="val-mutation">0.08</span>
+      </div>
+      <input type="range" id="sl-mutation" min="0" max="0.5" step="0.01" value="0.08" />
+      <div class="param-hint">Std dev of Gaussian noise applied to each gene per birth. 0 = frozen, 0.3 = rapid drift.</div>
+    </div>
+
+    <div class="param-row evo-param">
+      <div class="param-label">
+        <span class="param-name">Initial Gene Spread</span>
+        <span class="param-value" id="val-spread">0.15</span>
+      </div>
+      <input type="range" id="sl-spread" min="0" max="0.5" step="0.01" value="0.15" />
+      <div class="param-hint">Starting variance across the founding population (applied on reset).</div>
+    </div>
+  </div>
+
+  <!-- Prey initial genes -->
+  <div class="section">
+    <div class="section-title">Prey — Initial Genes</div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Base Speed</span><span class="param-value" id="val-prey-speed">2.5</span></div>
+      <input type="range" id="sl-prey-speed" min="0.5" max="7" step="0.1" value="2.5" />
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Flee Speed</span><span class="param-value" id="val-prey-flee">4.2</span></div>
+      <input type="range" id="sl-prey-flee" min="1" max="9" step="0.1" value="4.2" />
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Threat Sense Range</span><span class="param-value" id="val-prey-sense">90</span></div>
+      <input type="range" id="sl-prey-sense" min="20" max="200" step="5" value="90" />
+      <div class="param-hint">How far prey detect predators.</div>
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Food Sense Range</span><span class="param-value" id="val-prey-foodsense">60</span></div>
+      <input type="range" id="sl-prey-foodsense" min="10" max="150" step="5" value="60" />
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Metabolism (drain/frame)</span><span class="param-value" id="val-prey-drain">0.08</span></div>
+      <input type="range" id="sl-prey-drain" min="0.01" max="0.4" step="0.01" value="0.08" />
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Repro. Threshold</span><span class="param-value" id="val-prey-repro">80</span></div>
+      <input type="range" id="sl-prey-repro" min="20" max="150" step="5" value="80" />
+      <div class="param-hint">Energy to reproduce. Evolves toward r-strategy (low) or K-strategy (high).</div>
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Flock Range</span><span class="param-value" id="val-flock-range">65</span></div>
+      <input type="range" id="sl-flock-range" min="15" max="180" step="5" value="65" />
+      <div class="param-hint">Individual flock vision. Evolves tight vs. loose schooling.</div>
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Separation</span><span class="param-value" id="val-sep">1.5</span></div>
+      <input type="range" id="sl-sep" min="0" max="5" step="0.1" value="1.5" />
+      <div class="param-hint">Avoidance of crowding within the school.</div>
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Alignment</span><span class="param-value" id="val-align">1.0</span></div>
+      <input type="range" id="sl-align" min="0" max="5" step="0.1" value="1.0" />
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Cohesion</span><span class="param-value" id="val-coh">0.8</span></div>
+      <input type="range" id="sl-coh" min="0" max="5" step="0.1" value="0.8" />
+    </div>
+  </div>
+
+  <!-- Predator initial genes -->
+  <div class="section">
+    <div class="section-title">Predators — Initial Genes</div>
+
+    <div class="param-row pred-param">
+      <div class="param-label"><span class="param-name">Chase Speed</span><span class="param-value" id="val-pred-speed">3.0</span></div>
+      <input type="range" id="sl-pred-speed" min="0.5" max="8" step="0.1" value="3.0" />
+    </div>
+
+    <div class="param-row pred-param">
+      <div class="param-label"><span class="param-name">Prey Sense Range</span><span class="param-value" id="val-pred-sense">130</span></div>
+      <input type="range" id="sl-pred-sense" min="30" max="280" step="5" value="130" />
+    </div>
+
+    <div class="param-row pred-param">
+      <div class="param-label"><span class="param-name">Metabolism (drain/frame)</span><span class="param-value" id="val-pred-drain">0.20</span></div>
+      <input type="range" id="sl-pred-drain" min="0.02" max="0.8" step="0.02" value="0.20" />
+    </div>
+
+    <div class="param-row pred-param">
+      <div class="param-label"><span class="param-name">Repro. Threshold</span><span class="param-value" id="val-pred-repro">120</span></div>
+      <input type="range" id="sl-pred-repro" min="40" max="250" step="5" value="120" />
+      <div class="param-hint">Energy to reproduce. r/K trade-off same as prey.</div>
+    </div>
+
+    <div class="param-row pred-param">
+      <div class="param-label"><span class="param-name">Chase Patience (frames)</span><span class="param-value" id="val-pred-patience">90</span></div>
+      <input type="range" id="sl-pred-patience" min="10" max="300" step="5" value="90" />
+      <div class="param-hint">Frames before giving up on a prey that is pulling away. Low = give up early, high = persistent hunter.</div>
+    </div>
+  </div>
+
+  <!-- Environment (truly fixed) -->
+  <div class="section">
+    <div class="section-title">Environment (non-heritable)</div>
+
+    <div class="param-row food-param">
+      <div class="param-label"><span class="param-name">Energy per Food</span><span class="param-value" id="val-prey-food-e">28</span></div>
+      <input type="range" id="sl-prey-food-e" min="5" max="70" step="1" value="28" />
+    </div>
+
+    <div class="param-row food-param">
+      <div class="param-label"><span class="param-name">Energy per Kill</span><span class="param-value" id="val-pred-kill-e">70</span></div>
+      <input type="range" id="sl-pred-kill-e" min="10" max="150" step="5" value="70" />
+    </div>
+
+    <div class="param-row food-param">
+      <div class="param-label"><span class="param-name">Max Food</span><span class="param-value" id="val-max-food">90</span></div>
+      <input type="range" id="sl-max-food" min="10" max="300" step="5" value="90" />
+    </div>
+
+    <div class="param-row food-param">
+      <div class="param-label"><span class="param-name">Food Regen (frames)</span><span class="param-value" id="val-food-regen">12</span></div>
+      <input type="range" id="sl-food-regen" min="2" max="60" step="1" value="12" />
+    </div>
+  </div>
+
+  <!-- Initial populations -->
+  <div class="section">
+    <div class="section-title">Initial Population (reset to apply)</div>
+
+    <div class="param-row prey-param">
+      <div class="param-label"><span class="param-name">Prey</span><span class="param-value" id="val-init-prey">80</span></div>
+      <input type="range" id="sl-init-prey" min="5" max="200" step="5" value="80" />
+    </div>
+
+    <div class="param-row pred-param">
+      <div class="param-label"><span class="param-name">Predators</span><span class="param-value" id="val-init-pred">6</span></div>
+      <input type="range" id="sl-init-pred" min="1" max="40" step="1" value="6" />
+    </div>
+  </div>
+
+  <!-- Evolution tracker -->
+  <div id="evo-tracker">
+    <div class="evo-header">Trait Evolution (avg vs. initial ┃)</div>
+
+    <div class="evo-group">
+      <div class="evo-group-label" style="color:#4a8a5a">Prey</div>
+
+      <div class="evo-row">
+        <span class="evo-name">Flee speed</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-prey-flee"></div><div class="evo-bar-fill" id="eb-prey-flee" style="background:#4ade80"></div></div>
+        <span class="evo-val s-prey" id="ev-prey-flee">—</span>
+        <span class="evo-arrow" id="ea-prey-flee">—</span>
+      </div>
+
+      <div class="evo-row">
+        <span class="evo-name">Threat sense</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-prey-sense"></div><div class="evo-bar-fill" id="eb-prey-sense" style="background:#34d399"></div></div>
+        <span class="evo-val s-prey" id="ev-prey-sense">—</span>
+        <span class="evo-arrow" id="ea-prey-sense">—</span>
+      </div>
+
+      <div class="evo-row">
+        <span class="evo-name">Metabolism</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-prey-meta"></div><div class="evo-bar-fill" id="eb-prey-meta" style="background:#fbbf24"></div></div>
+        <span class="evo-val s-prey" id="ev-prey-meta">—</span>
+        <span class="evo-arrow" id="ea-prey-meta">—</span>
+      </div>
+
+      <div class="evo-row">
+        <span class="evo-name">Repro. threshold</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-prey-repro"></div><div class="evo-bar-fill" id="eb-prey-repro" style="background:#a3e635"></div></div>
+        <span class="evo-val s-prey" id="ev-prey-repro">—</span>
+        <span class="evo-arrow" id="ea-prey-repro">—</span>
+      </div>
+
+      <div class="evo-row">
+        <span class="evo-name">Flock range</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-prey-flock"></div><div class="evo-bar-fill" id="eb-prey-flock" style="background:#67e8f9"></div></div>
+        <span class="evo-val s-prey" id="ev-prey-flock">—</span>
+        <span class="evo-arrow" id="ea-prey-flock">—</span>
+      </div>
+
+      <div class="evo-row">
+        <span class="evo-name">Cohesion</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-prey-coh"></div><div class="evo-bar-fill" id="eb-prey-coh" style="background:#a78bfa"></div></div>
+        <span class="evo-val s-prey" id="ev-prey-coh">—</span>
+        <span class="evo-arrow" id="ea-prey-coh">—</span>
+      </div>
+    </div>
+
+    <div class="evo-group">
+      <div class="evo-group-label" style="color:#8a4a4a">Predators</div>
+
+      <div class="evo-row">
+        <span class="evo-name">Chase speed</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-pred-speed"></div><div class="evo-bar-fill" id="eb-pred-speed" style="background:#f87171"></div></div>
+        <span class="evo-val s-pred" id="ev-pred-speed">—</span>
+        <span class="evo-arrow" id="ea-pred-speed">—</span>
+      </div>
+
+      <div class="evo-row">
+        <span class="evo-name">Prey sense</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-pred-sense"></div><div class="evo-bar-fill" id="eb-pred-sense" style="background:#fb923c"></div></div>
+        <span class="evo-val s-pred" id="ev-pred-sense">—</span>
+        <span class="evo-arrow" id="ea-pred-sense">—</span>
+      </div>
+
+      <div class="evo-row">
+        <span class="evo-name">Metabolism</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-pred-meta"></div><div class="evo-bar-fill" id="eb-pred-meta" style="background:#fbbf24"></div></div>
+        <span class="evo-val s-pred" id="ev-pred-meta">—</span>
+        <span class="evo-arrow" id="ea-pred-meta">—</span>
+      </div>
+
+      <div class="evo-row">
+        <span class="evo-name">Repro. threshold</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-pred-repro"></div><div class="evo-bar-fill" id="eb-pred-repro" style="background:#fda4af"></div></div>
+        <span class="evo-val s-pred" id="ev-pred-repro">—</span>
+        <span class="evo-arrow" id="ea-pred-repro">—</span>
+      </div>
+
+      <div class="evo-row">
+        <span class="evo-name">Patience</span>
+        <div class="evo-bar-wrap"><div class="evo-bar-init" id="ei-pred-patience"></div><div class="evo-bar-fill" id="eb-pred-patience" style="background:#c084fc"></div></div>
+        <span class="evo-val s-pred" id="ev-pred-patience">—</span>
+        <span class="evo-arrow" id="ea-pred-patience">—</span>
+      </div>
+    </div>
+
+    <div class="evo-note">
+      Bar = current avg. ┃ = initial value. Arrows = direction of drift over last 30s.
+    </div>
+  </div>
+
+  <!-- Population graph -->
+  <div id="graph-section">
+    <div id="graph-title">
+      Population
+      <div id="graph-legend">
+        <div class="gl"><div class="gl-dot" style="background:#4ade80"></div>Prey</div>
+        <div class="gl"><div class="gl-dot" style="background:#f87171"></div>Pred</div>
+        <div class="gl"><div class="gl-dot" style="background:#fde047"></div>Food</div>
+      </div>
+    </div>
+    <canvas id="graph-canvas"></canvas>
+  </div>
+
+  <!-- Stats -->
+  <div id="stats">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="s-label">Prey</div><div class="s-value s-prey" id="stat-prey">—</div></div>
+      <div class="stat-box"><div class="s-label">Predators</div><div class="s-value s-pred" id="stat-pred">—</div></div>
+      <div class="stat-box"><div class="s-label">Food</div><div class="s-value s-food" id="stat-food">—</div></div>
+      <div class="stat-box"><div class="s-label">Max Gen.</div><div class="s-value s-gen" id="stat-gen">—</div></div>
+      <div class="stat-box"><div class="s-label">FPS</div><div class="s-value s-fps" id="stat-fps">—</div></div>
+      <div class="stat-box"><div class="s-label">Phase</div><div class="s-value s-phase" id="stat-phase">—</div></div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button id="btn-pause">⏸ Pause</button>
+    <button id="btn-reset">↺ Reset</button>
+  </div>
+</div>
+
+<!-- ══════════════ CANVAS ══════════════ -->
+<div id="canvas-wrap">
+  <canvas id="sim-canvas"></canvas>
+
+  <div id="info-overlay">
+    <div class="oi-row"><div class="oi-dot" style="background:#4ade80"></div><span style="color:#7a9a7a">Prey — hue = flee speed (cyan = fast)</span></div>
+    <div class="oi-row"><div class="oi-dot" style="background:#f87171"></div><span style="color:#7a9a7a">Predator — size = sense range</span></div>
+    <div class="oi-row"><div class="oi-dot" style="background:#fde047"></div><span style="color:#7a9a7a">Food — regrows over time</span></div>
+    <div style="margin-top:5px;font-size:0.61rem;color:#3a5540">Brightness = energy. Click agent to inspect genes.<br>Every behavior is heritable & evolvable.</div>
+  </div>
+
+  <div id="legend-color">
+    <div style="font-size:0.62rem;color:#3a5540;margin-bottom:5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;">Prey hue = flee speed</div>
+    <div class="lc-row">
+      <canvas class="lc-grad" id="grad-prey"></canvas>
+      <span style="font-size:0.61rem;color:#4a6650">slow → fast</span>
+    </div>
+    <div style="font-size:0.62rem;color:#3a5540;margin-top:7px;margin-bottom:3px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;">Predator size = sense range</div>
+    <div style="font-size:0.61rem;color:#4a6650">small = short-range · large = wide hunter</div>
+  </div>
+
+  <div id="extinction-overlay">
+    <h2 id="ext-title"></h2>
+    <p id="ext-msg"></p>
+  </div>
+
+  <div id="paused-badge">PAUSED</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//   EVOLUTIONARY PREDATOR-PREY — All parameters heritable
+//   Sliders seed initial gene values; mutation + selection
+//   drive every behavioral trait independently.
+// ══════════════════════════════════════════════════════════════
+
+const simCanvas   = document.getElementById('sim-canvas');
+const ctx         = simCanvas.getContext('2d');
+const wrap        = document.getElementById('canvas-wrap');
+const graphCanvas = document.getElementById('graph-canvas');
+const gctx        = graphCanvas.getContext('2d');
+
+// ── P holds only: env constants + initial gene seeds + UI-only params ──
+const P = {
+  mutationRate:   0.08,
+  initSpread:     0.15,
+  // Environment only (truly fixed, no agent-level variation)
+  preyFoodEnergy: 28,
+  predPreyEnergy: 70,
+  maxFood:        90,
+  foodRegenRate:  12,
+  // Initial gene seeds (sliders set these; genes evolve away)
+  preySpeed:       2.5,
+  preyFleeSpeed:   4.2,
+  preySenseRange:  90,
+  preyFoodSense:   60,
+  preyMetabolism:  0.08,
+  preyReproThresh: 80,
+  preyFlockRange:  65,
+  preySep:         1.5,
+  preyAlign:       1.0,
+  preyCoh:         0.8,
+  predSpeed:       3.0,
+  predSenseRange:  130,
+  predMetabolism:  0.20,
+  predReproThresh: 120,
+  predPatience:    90,
+  // Initial counts
+  initPrey: 80,
+  initPred: 6,
+};
+
+let initGenes = {};
+
+const PREY_MAX_E  = 100;
+const PRED_MAX_E  = 180;
+const EAT_RADIUS  = 12;
+const KILL_RADIUS = 14;
+const MAX_PREY    = 350;
+const MAX_PRED    = 80;
+
+// ── Slider wiring ──
+function bind(id, key, dspId, fmt) {
+  const el = document.getElementById(id);
+  const dsp = document.getElementById(dspId);
+  el.addEventListener('input', () => {
+    const v = parseFloat(el.value);
+    P[key] = v;
+    dsp.textContent = fmt ? fmt(v) : v;
+  });
+}
+
+bind('sl-mutation',      'mutationRate',    'val-mutation');
+bind('sl-spread',        'initSpread',      'val-spread');
+bind('sl-prey-speed',    'preySpeed',       'val-prey-speed');
+bind('sl-prey-flee',     'preyFleeSpeed',   'val-prey-flee');
+bind('sl-prey-sense',    'preySenseRange',  'val-prey-sense');
+bind('sl-prey-foodsense','preyFoodSense',   'val-prey-foodsense');
+bind('sl-prey-drain',    'preyMetabolism',  'val-prey-drain');
+bind('sl-prey-repro',    'preyReproThresh', 'val-prey-repro');
+bind('sl-flock-range',   'preyFlockRange',  'val-flock-range');
+bind('sl-sep',           'preySep',         'val-sep');
+bind('sl-align',         'preyAlign',       'val-align');
+bind('sl-coh',           'preyCoh',         'val-coh');
+bind('sl-pred-speed',    'predSpeed',       'val-pred-speed');
+bind('sl-pred-sense',    'predSenseRange',  'val-pred-sense');
+bind('sl-pred-drain',    'predMetabolism',  'val-pred-drain');
+bind('sl-pred-repro',    'predReproThresh', 'val-pred-repro');
+bind('sl-pred-patience', 'predPatience',    'val-pred-patience');
+bind('sl-prey-food-e',   'preyFoodEnergy',  'val-prey-food-e');
+bind('sl-pred-kill-e',   'predPreyEnergy',  'val-pred-kill-e');
+bind('sl-max-food',      'maxFood',         'val-max-food');
+bind('sl-food-regen',    'foodRegenRate',   'val-food-regen');
+bind('sl-init-prey',     'initPrey',        'val-init-prey');
+bind('sl-init-pred',     'initPred',        'val-init-pred');
+
+// ── Utility ──
+function rand(a, b)   { return a + Math.random() * (b - a); }
+function hypot(dx,dy) { return Math.sqrt(dx*dx + dy*dy); }
+
+function vLimit(vx, vy, max) {
+  const m = Math.sqrt(vx*vx + vy*vy);
+  return m > max ? [vx/m*max, vy/m*max] : [vx, vy];
+}
+
+function vSetMag(vx, vy, mag) {
+  const m = Math.sqrt(vx*vx + vy*vy) || 1;
+  return [vx/m*mag, vy/m*mag];
+}
+
+// Gaussian multiplicative mutation clamped to [lo, hi]
+function mutate(v, rate, lo, hi) {
+  const u1 = Math.random() || 1e-10, u2 = Math.random();
+  const g   = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  return Math.max(lo, Math.min(hi, v * (1 + g * rate)));
+}
+
+// ── Gene schemas ──
+// Prey: 10 genes
+function makePreyGenes(s) {
+  s = s ?? P.initSpread;
+  return {
+    speed:       P.preySpeed       * (1 + rand(-s, s)),
+    fleeSpeed:   P.preyFleeSpeed   * (1 + rand(-s, s)),
+    senseRange:  P.preySenseRange  * (1 + rand(-s, s)),
+    foodRange:   P.preyFoodSense   * (1 + rand(-s, s)),
+    metabolism:  P.preyMetabolism  * (1 + rand(-s, s)),
+    reproThresh: P.preyReproThresh * (1 + rand(-s, s)),
+    flockRange:  P.preyFlockRange  * (1 + rand(-s, s)),
+    sep:         P.preySep         * (1 + rand(-s, s)),
+    align:       P.preyAlign       * (1 + rand(-s, s)),
+    coh:         P.preyCoh         * (1 + rand(-s, s)),
+  };
+}
+
+// Predator: 5 genes
+function makePredGenes(s) {
+  s = s ?? P.initSpread;
+  return {
+    speed:       P.predSpeed       * (1 + rand(-s, s)),
+    senseRange:  P.predSenseRange  * (1 + rand(-s, s)),
+    metabolism:  P.predMetabolism  * (1 + rand(-s, s)),
+    reproThresh: P.predReproThresh * (1 + rand(-s, s)),
+    patience:    P.predPatience    * (1 + rand(-s, s)),
+  };
+}
+
+function mutatePreyGenes(g, rate) {
+  return {
+    speed:       mutate(g.speed,       rate, 0.4,   9.0),
+    fleeSpeed:   mutate(g.fleeSpeed,   rate, 0.5,  11.0),
+    senseRange:  mutate(g.senseRange,  rate, 15,   210),
+    foodRange:   mutate(g.foodRange,   rate, 8,    160),
+    metabolism:  mutate(g.metabolism,  rate, 0.005, 0.55),
+    reproThresh: mutate(g.reproThresh, rate, 15,   160),
+    flockRange:  mutate(g.flockRange,  rate, 10,   200),
+    sep:         mutate(g.sep,         rate, 0,     6.0),
+    align:       mutate(g.align,       rate, 0,     6.0),
+    coh:         mutate(g.coh,         rate, 0,     6.0),
+  };
+}
+
+function mutatePredGenes(g, rate) {
+  return {
+    speed:       mutate(g.speed,       rate, 0.4,   9.0),
+    senseRange:  mutate(g.senseRange,  rate, 25,   290),
+    metabolism:  mutate(g.metabolism,  rate, 0.01,  0.9),
+    reproThresh: mutate(g.reproThresh, rate, 30,   260),
+    patience:    mutate(g.patience,    rate, 8,    320),
+  };
+}
+
+// ── Effects ──
+const effects = [];
+
+class Effect {
+  constructor(x, y, type) {
+    this.x = x; this.y = y; this.type = type;
+    this.life  = 1.0;
+    this.decay = (type === 'corpse_prey' || type === 'corpse_pred') ? 0.0028 : 0.055;
+    this.r     = type === 'kill' ? 18 : type === 'birth' ? 12
+               : type === 'corpse_prey' ? 7 : type === 'corpse_pred' ? 11 : 8;
+  }
+
+  tick() { this.life -= this.decay; return this.life > 0; }
+
+  draw() {
+    const cols = {
+      eat: '#22c55e', kill: '#ef4444', birth: '#60a5fa',
+      corpse_prey: '#4ade80', corpse_pred: '#f87171',
+    };
+    ctx.save();
+    if (this.type === 'corpse_prey' || this.type === 'corpse_pred') {
+      ctx.globalAlpha = this.life * 0.55;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r * (0.7 + 0.3 * this.life), 0, Math.PI * 2);
+      ctx.strokeStyle = cols[this.type]; ctx.lineWidth = 1.2;
+      ctx.setLineDash([3, 3]); ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r * (0.7 + 0.3 * this.life), 0, Math.PI * 2);
+      ctx.fillStyle = cols[this.type]; ctx.globalAlpha = this.life * 0.08; ctx.fill();
+    } else {
+      ctx.globalAlpha = this.life * 0.7;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r * (2 - this.life), 0, Math.PI * 2);
+      ctx.strokeStyle = cols[this.type]; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+// ── Food ──
+const foods = [];
+
+function spawnFood() {
+  const m = 15;
+  foods.push({ x: rand(m, simCanvas.width-m), y: rand(m, simCanvas.height-m), phase: rand(0, Math.PI*2) });
+}
+
+function drawFood(f, t) {
+  const p = 0.85 + 0.15 * Math.sin(f.phase + t * 0.05);
+  ctx.save(); ctx.globalAlpha = 0.9;
+  ctx.beginPath(); ctx.arc(f.x, f.y, 3.5*p, 0, Math.PI*2); ctx.fillStyle = '#a3e635'; ctx.fill();
+  ctx.beginPath(); ctx.arc(f.x-0.8, f.y-0.8, 1.2, 0, Math.PI*2); ctx.fillStyle = '#ecfccb'; ctx.fill();
+  ctx.restore();
+}
+
+// ──────────────────────────────────────
+//  PREY
+// ──────────────────────────────────────
+class Prey {
+  constructor(x, y, energy, genes) {
+    this.x = x; this.y = y;
+    const a = rand(0, Math.PI*2);
+    this.vx = Math.cos(a) * rand(1, 2);
+    this.vy = Math.sin(a) * rand(1, 2);
+    this.energy     = energy ?? rand(35, 60);
+    this.alive      = true;
+    this.cooldown   = rand(0, 60)|0;
+    this.generation = 0;
+    this.genes      = genes ?? makePreyGenes();
+    this._updateVisuals();
+  }
+
+  _updateVisuals() {
+    // Hue: flee speed → yellow-green (slow) to cyan (fast)
+    const t  = Math.max(0, Math.min(1, (this.genes.fleeSpeed - 1) / 8));
+    this.hue = 145 + t * 50;
+    // Size: food sense range
+    this.sz  = 3.8 + (this.genes.foodRange / 160) * 2.2;
+  }
+
+  update(preyArr, predArr, foodArr) {
+    this.cooldown = Math.max(0, this.cooldown - 1);
+
+    // Metabolism gene drives energy drain
+    this.energy -= this.genes.metabolism;
+    if (this.energy <= 0) { this.alive = false; return; }
+
+    // Eat nearby food
+    for (let i = foodArr.length - 1; i >= 0; i--) {
+      const f = foodArr[i];
+      if (hypot(f.x - this.x, f.y - this.y) < EAT_RADIUS) {
+        this.energy = Math.min(PREY_MAX_E, this.energy + P.preyFoodEnergy);
+        effects.push(new Effect(f.x, f.y, 'eat'));
+        foodArr.splice(i, 1);
+        break;
+      }
+    }
+
+    // Reproduce — reproThresh gene governs when
+    if (this.energy >= this.genes.reproThresh && this.cooldown === 0 && preyArr.length < MAX_PREY) {
+      this.energy  -= this.genes.reproThresh * 0.48;
+      this.cooldown = 180;
+      const child   = new Prey(
+        this.x + rand(-18, 18), this.y + rand(-18, 18),
+        this.genes.reproThresh * 0.28,
+        mutatePreyGenes(this.genes, P.mutationRate)
+      );
+      child.generation = this.generation + 1;
+      preyArr.push(child);
+      effects.push(new Effect(this.x, this.y, 'birth'));
+      maxGen = Math.max(maxGen, child.generation);
+    }
+
+    // ── Forces ──
+    let fx = 0, fy = 0;
+    let fleeing = false, closestThreat = Infinity;
+
+    // 1. Flee predators — senseRange gene
+    for (const pred of predArr) {
+      if (!pred.alive) continue;
+      const dx = this.x - pred.x, dy = this.y - pred.y;
+      const d  = hypot(dx, dy);
+      if (d < this.genes.senseRange && d > 0) {
+        fleeing = true;
+        closestThreat = Math.min(closestThreat, d);
+        const str = 1 - d / this.genes.senseRange;
+        let [px, py] = vSetMag(dx, dy, this.genes.fleeSpeed);
+        px -= this.vx; py -= this.vy;
+        [px, py] = vLimit(px, py, 0.35);
+        fx += px * str * 4; fy += py * str * 4;
+      }
+    }
+
+    // 2. Seek food — foodRange gene, only when hungry
+    if (!fleeing || closestThreat > this.genes.senseRange * 0.55) {
+      if (this.energy < this.genes.reproThresh * 0.65) {
+        let bestF = null, bestD = this.genes.foodRange;
+        for (const f of foodArr) {
+          const d = hypot(f.x - this.x, f.y - this.y);
+          if (d < bestD) { bestD = d; bestF = f; }
+        }
+        if (bestF) {
+          const dx = bestF.x - this.x, dy = bestF.y - this.y;
+          let [gx, gy] = vSetMag(dx, dy, this.genes.speed);
+          gx -= this.vx; gy -= this.vy;
+          [gx, gy] = vLimit(gx, gy, 0.12);
+          fx += gx * 0.6; fy += gy * 0.6;
+        }
+      }
+    }
+
+    // 3. Boids flocking — flockRange, sep, align, coh genes
+    if (!fleeing || closestThreat > this.genes.senseRange * 0.4) {
+      let sx = 0, sy = 0, ax = 0, ay = 0, cx = 0, cy = 0;
+      let sepN = 0, neighN = 0;
+
+      for (const o of preyArr) {
+        if (o === this || !o.alive) continue;
+        const dx = o.x - this.x, dy = o.y - this.y;
+        const d  = hypot(dx, dy);
+        if (d < this.genes.flockRange && d > 0) {
+          neighN++;
+          ax += o.vx; ay += o.vy;
+          cx += o.x;  cy += o.y;
+          if (d < 20) { sx -= dx/d; sy -= dy/d; sepN++; }
+        }
+      }
+
+      if (neighN > 0) {
+        ax /= neighN; ay /= neighN;
+        [ax, ay] = vSetMag(ax, ay, this.genes.speed);
+        ax -= this.vx; ay -= this.vy;
+        [ax, ay] = vLimit(ax, ay, 0.09);
+
+        cx = cx/neighN - this.x; cy = cy/neighN - this.y;
+        [cx, cy] = vSetMag(cx, cy, this.genes.speed);
+        cx -= this.vx; cy -= this.vy;
+        [cx, cy] = vLimit(cx, cy, 0.09);
+
+        fx += ax * this.genes.align + cx * this.genes.coh;
+        fy += ay * this.genes.align + cy * this.genes.coh;
+      }
+
+      if (sepN > 0) {
+        [sx, sy] = vSetMag(sx, sy, this.genes.speed);
+        sx -= this.vx; sy -= this.vy;
+        [sx, sy] = vLimit(sx, sy, 0.1);
+        fx += sx * this.genes.sep; fy += sy * this.genes.sep;
+      }
+    }
+
+    this.vx += fx; this.vy += fy;
+    [this.vx, this.vy] = vLimit(this.vx, this.vy, fleeing ? this.genes.fleeSpeed : this.genes.speed);
+    if (hypot(this.vx, this.vy) < 0.25) { this.vx += rand(-0.5,0.5); this.vy += rand(-0.5,0.5); }
+
+    this.x += this.vx; this.y += this.vy;
+    const W = simCanvas.width, H = simCanvas.height;
+    if (this.x < -10) this.x = W+10; if (this.x > W+10) this.x = -10;
+    if (this.y < -10) this.y = H+10; if (this.y > H+10) this.y = -10;
+  }
+
+  draw(selected) {
+    const angle  = Math.atan2(this.vy, this.vx);
+    const eRatio = Math.max(0.1, this.energy / PREY_MAX_E);
+    const bright = 30 + eRatio * 38;
+    const sz     = this.sz;
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(angle);
+
+    ctx.beginPath();
+    ctx.moveTo(sz*1.5, 0);
+    ctx.lineTo(-sz*0.7, -sz*0.65);
+    ctx.lineTo(-sz*1.3, 0);
+    ctx.lineTo(-sz*0.7,  sz*0.65);
+    ctx.closePath();
+    ctx.fillStyle = `hsl(${this.hue}, 72%, ${bright}%)`;
+    ctx.fill();
+
+    const barW = sz*2.5;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(-barW/2, sz+2, barW, 2.5);
+    ctx.fillStyle = eRatio > 0.5 ? '#4ade80' : eRatio > 0.25 ? '#fbbf24' : '#ef4444';
+    ctx.fillRect(-barW/2, sz+2, barW*eRatio, 2.5);
+
+    if (selected) {
+      ctx.restore(); ctx.save(); ctx.translate(this.x, this.y);
+      // Threat sense ring
+      ctx.beginPath(); ctx.arc(0, 0, this.genes.senseRange, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(248,113,113,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+      // Food range (dashed)
+      ctx.beginPath(); ctx.arc(0, 0, this.genes.foodRange, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(74,222,128,0.25)'; ctx.lineWidth = 1;
+      ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+      // Flock range (dotted)
+      ctx.beginPath(); ctx.arc(0, 0, this.genes.flockRange, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(103,232,249,0.2)'; ctx.lineWidth = 1;
+      ctx.setLineDash([2,4]); ctx.stroke(); ctx.setLineDash([]);
+      // Gene readout
+      const g = this.genes;
+      ctx.font = '9px monospace'; ctx.fillStyle = '#4ade80'; ctx.textAlign = 'left';
+      const off = this.genes.senseRange + 6;
+      [
+        `flee:  ${g.fleeSpeed.toFixed(2)}`,
+        `sense: ${g.senseRange.toFixed(0)}`,
+        `food:  ${g.foodRange.toFixed(0)}`,
+        `flock: ${g.flockRange.toFixed(0)}`,
+        `meta:  ${g.metabolism.toFixed(3)}`,
+        `repro: ${g.reproThresh.toFixed(0)}`,
+        `sep:   ${g.sep.toFixed(2)}`,
+        `coh:   ${g.coh.toFixed(2)}`,
+        `gen:   ${this.generation}`,
+      ].forEach((l, i) => ctx.fillText(l, off, -46 + i*12));
+    }
+
+    ctx.restore();
+  }
+}
+
+// ──────────────────────────────────────
+//  PREDATOR
+// ──────────────────────────────────────
+class Predator {
+  constructor(x, y, energy, genes) {
+    this.x = x; this.y = y;
+    const a = rand(0, Math.PI*2);
+    this.vx = Math.cos(a) * 1.5;
+    this.vy = Math.sin(a) * 1.5;
+    this.energy     = energy ?? rand(60, 100);
+    this.alive      = true;
+    this.cooldown   = rand(0, 120)|0;
+    this.generation = 0;
+    this.genes      = genes ?? makePredGenes();
+    // Chase state
+    this.lockedTarget   = null;
+    this.lastTargetDist = Infinity;
+    this.patienceLeft   = 0;   // counts down while prey is pulling away
+    this.giveUpCooldown = 0;   // wander cooldown after giving up
+    this._updateVisuals();
+  }
+
+  _updateVisuals() {
+    this.sz = 7 + (this.genes.senseRange / 290) * 7;
+  }
+
+  update(preyArr, predArr) {
+    this.cooldown = Math.max(0, this.cooldown - 1);
+
+    // Metabolism gene
+    this.energy -= this.genes.metabolism;
+    if (this.energy <= 0) { this.alive = false; return; }
+
+    let fx = 0, fy = 0;
+
+    // Tick give-up rest cooldown
+    if (this.giveUpCooldown > 0) this.giveUpCooldown--;
+
+    // Drop locked target if dead or escaped sense range
+    if (this.lockedTarget) {
+      const d = hypot(this.lockedTarget.x - this.x, this.lockedTarget.y - this.y);
+      if (!this.lockedTarget.alive || d > this.genes.senseRange * 1.3) {
+        this.lockedTarget = null; this.patienceLeft = 0;
+      }
+    }
+
+    // Pick a new target if not resting and not already chasing
+    if (!this.lockedTarget && this.giveUpCooldown === 0) {
+      let best = null, bestD = this.genes.senseRange;
+      for (const p of preyArr) {
+        if (!p.alive) continue;
+        const d = hypot(p.x - this.x, p.y - this.y);
+        if (d < bestD) { bestD = d; best = p; }
+      }
+      if (best) {
+        this.lockedTarget   = best;
+        this.lastTargetDist = bestD;
+        this.patienceLeft   = this.genes.patience; // patience gene sets initial budget
+      }
+    }
+
+    if (this.lockedTarget) {
+      const dx = this.lockedTarget.x - this.x;
+      const dy = this.lockedTarget.y - this.y;
+      const td = hypot(dx, dy);
+
+      if (td < this.lastTargetDist) {
+        // Closing — reset patience
+        this.patienceLeft = this.genes.patience;
+      } else {
+        // Gap widening — burn patience
+        this.patienceLeft--;
+        if (this.patienceLeft <= 0) {
+          // Give up: bleed speed, rest before hunting again
+          this.vx *= 0.4; this.vy *= 0.4;
+          this.giveUpCooldown = 100 + rand(0, 60)|0;
+          this.lockedTarget   = null;
+          this.patienceLeft   = 0;
+          fx += rand(-0.15, 0.15); fy += rand(-0.15, 0.15);
+        }
+      }
+
+      this.lastTargetDist = td;
+
+      if (this.lockedTarget) {
+        let [cx, cy] = vSetMag(dx, dy, this.genes.speed);
+        cx -= this.vx; cy -= this.vy;
+        [cx, cy] = vLimit(cx, cy, 0.18);
+        fx += cx * 1.4; fy += cy * 1.4;
+
+        if (td < KILL_RADIUS) {
+          this.lockedTarget.alive = false;
+          this.energy = Math.min(PRED_MAX_E, this.energy + P.predPreyEnergy);
+          effects.push(new Effect(this.lockedTarget.x, this.lockedTarget.y, 'kill'));
+          this.lockedTarget = null; this.patienceLeft = 0;
+        }
+      }
+    } else {
+      // Wandering
+      fx += rand(-0.2, 0.2); fy += rand(-0.2, 0.2);
+    }
+
+    // Separate from other predators
+    for (const o of predArr) {
+      if (o === this || !o.alive) continue;
+      const dx = this.x - o.x, dy = this.y - o.y;
+      const d  = hypot(dx, dy);
+      if (d < 45 && d > 0) { fx += (dx/d)*0.12; fy += (dy/d)*0.12; }
+    }
+
+    // Reproduce — reproThresh gene
+    if (this.energy >= this.genes.reproThresh && this.cooldown === 0 && predArr.length < MAX_PRED) {
+      this.energy  -= this.genes.reproThresh * 0.52;
+      this.cooldown = 400;
+      const child = new Predator(
+        this.x + rand(-25, 25), this.y + rand(-25, 25),
+        this.genes.reproThresh * 0.3,
+        mutatePredGenes(this.genes, P.mutationRate)
+      );
+      child.generation = this.generation + 1;
+      predArr.push(child);
+      effects.push(new Effect(this.x, this.y, 'birth'));
+      maxGen = Math.max(maxGen, child.generation);
+    }
+
+    this.vx += fx; this.vy += fy;
+    [this.vx, this.vy] = vLimit(this.vx, this.vy, this.genes.speed);
+    if (hypot(this.vx, this.vy) < 0.3) { this.vx += rand(-0.4,0.4); this.vy += rand(-0.4,0.4); }
+
+    this.x += this.vx; this.y += this.vy;
+    const W = simCanvas.width, H = simCanvas.height;
+    if (this.x < -20) this.x = W+20; if (this.x > W+20) this.x = -20;
+    if (this.y < -20) this.y = H+20; if (this.y > H+20) this.y = -20;
+  }
+
+  draw(selected) {
+    const angle  = Math.atan2(this.vy, this.vx);
+    const eRatio = Math.max(0.1, this.energy / PRED_MAX_E);
+    const bright = 28 + eRatio * 28;
+    const sz     = this.sz;
+    // Resting after give-up: slightly blue-shifted
+    const saturation = this.giveUpCooldown > 0 ? 40 : 82;
+    const hue        = 0;
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    ctx.beginPath(); ctx.arc(0, 0, this.genes.senseRange, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(239,68,68,0.04)'; ctx.lineWidth = 1; ctx.stroke();
+
+    ctx.rotate(angle);
+
+    ctx.beginPath();
+    ctx.moveTo(sz*1.4,   0);
+    ctx.lineTo(-sz*0.5, -sz*0.9);
+    ctx.lineTo(-sz*0.9, -sz*0.3);
+    ctx.lineTo(-sz*1.1,  0);
+    ctx.lineTo(-sz*0.9,  sz*0.3);
+    ctx.lineTo(-sz*0.5,  sz*0.9);
+    ctx.closePath();
+    ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${bright}%)`;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,180,180,0.18)'; ctx.lineWidth = 0.8; ctx.stroke();
+
+    ctx.beginPath(); ctx.arc(sz*0.4, -sz*0.25, 1.5, 0, Math.PI*2);
+    ctx.fillStyle = '#fef08a'; ctx.fill();
+
+    const barW = sz*2.4;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(-barW/2, sz+3, barW, 2.5);
+    ctx.fillStyle = eRatio > 0.5 ? '#f87171' : eRatio > 0.25 ? '#fb923c' : '#7f1d1d';
+    ctx.fillRect(-barW/2, sz+3, barW*eRatio, 2.5);
+
+    if (selected) {
+      ctx.restore(); ctx.save(); ctx.translate(this.x, this.y);
+      ctx.beginPath(); ctx.arc(0, 0, this.genes.senseRange, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(239,68,68,0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+      // Patience bar above predator
+      if (this.lockedTarget) {
+        const pFrac = Math.max(0, this.patienceLeft / this.genes.patience);
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(-20, -sz-12, 40, 4);
+        ctx.fillStyle = pFrac > 0.5 ? '#fb923c' : '#ef4444';
+        ctx.fillRect(-20, -sz-12, 40*pFrac, 4);
+      }
+      const g = this.genes;
+      ctx.font = '9px monospace'; ctx.fillStyle = '#f87171'; ctx.textAlign = 'left';
+      const off = this.genes.senseRange + 6;
+      [
+        `speed:    ${g.speed.toFixed(2)}`,
+        `sense:    ${g.senseRange.toFixed(0)}`,
+        `meta:     ${g.metabolism.toFixed(3)}`,
+        `repro:    ${g.reproThresh.toFixed(0)}`,
+        `patience: ${g.patience.toFixed(0)}`,
+        `gen:      ${this.generation}`,
+      ].forEach((l, i) => ctx.fillText(l, off, -30 + i*12));
+    }
+
+    ctx.restore();
+  }
+}
+
+// ── State ──
+let prey = [], predators = [];
+let paused = false, tick = 0, maxGen = 0, selectedAgent = null;
+
+const HIST_LEN = 300;
+const hist = { prey: [], pred: [], food: [] };
+let maxHistPrey = 10, maxHistPred = 5, maxHistFood = 10;
+
+// Trait history for trend arrows
+const TRAIT_HIST = 60;
+const traitHist = {
+  preyFlee: [], preySense: [], preyMeta: [], preyRepro: [], preyFlock: [], preyCoh: [],
+  predSpeed: [], predSense: [], predMeta: [], predRepro: [], predPatience: [],
+};
+
+let fps = 0, lastFpsTime = performance.now(), fpsFrames = 0;
+
+function resize() {
+  simCanvas.width   = wrap.clientWidth;
+  simCanvas.height  = wrap.clientHeight;
+  graphCanvas.width  = graphCanvas.offsetWidth;
+  graphCanvas.height = graphCanvas.offsetHeight;
+}
+
+function init() {
+  resize();
+  tick = 0; maxGen = 0; selectedAgent = null;
+  prey.length = 0; predators.length = 0; foods.length = 0; effects.length = 0;
+  hist.prey.length = 0; hist.pred.length = 0; hist.food.length = 0;
+  for (const k of Object.keys(traitHist)) traitHist[k].length = 0;
+  maxHistPrey = P.initPrey; maxHistPred = P.initPred; maxHistFood = P.maxFood;
+
+  initGenes = {
+    preyFlee: P.preyFleeSpeed, preySense: P.preySenseRange,
+    preyMeta: P.preyMetabolism, preyRepro: P.preyReproThresh,
+    preyFlock: P.preyFlockRange, preyCoh: P.preyCoh,
+    predSpeed: P.predSpeed, predSense: P.predSenseRange,
+    predMeta: P.predMetabolism, predRepro: P.predReproThresh,
+    predPatience: P.predPatience,
+  };
+  updateInitBars();
+
+  const W = simCanvas.width, H = simCanvas.height;
+  for (let i = 0; i < P.initPrey; i++)
+    prey.push(new Prey(rand(50, W-50), rand(50, H-50)));
+  for (let i = 0; i < P.initPred; i++)
+    predators.push(new Predator(rand(50, W-50), rand(50, H-50)));
+  for (let i = 0; i < P.maxFood * 0.6; i++) spawnFood();
+
+  document.getElementById('extinction-overlay').style.display = 'none';
+}
+
+function drawGradLegend() {
+  const c = document.getElementById('grad-prey');
+  c.width = c.offsetWidth; c.height = c.offsetHeight;
+  const gc = c.getContext('2d');
+  const gr = gc.createLinearGradient(0, 0, c.width, 0);
+  gr.addColorStop(0,   'hsl(145,72%,50%)');
+  gr.addColorStop(0.5, 'hsl(170,72%,50%)');
+  gr.addColorStop(1,   'hsl(195,72%,50%)');
+  gc.fillStyle = gr; gc.fillRect(0, 0, c.width, c.height);
+}
+
+// Gene max values for bar scaling
+const GENE_MAX = {
+  preyFlee: 11, preySense: 210, preyMeta: 0.55, preyRepro: 160, preyFlock: 200, preyCoh: 6,
+  predSpeed: 9, predSense: 290, predMeta: 0.9, predRepro: 260, predPatience: 320,
+};
+
+function updateInitBars() {
+  const map = [
+    ['ei-prey-flee',    'preyFlee'],
+    ['ei-prey-sense',   'preySense'],
+    ['ei-prey-meta',    'preyMeta'],
+    ['ei-prey-repro',   'preyRepro'],
+    ['ei-prey-flock',   'preyFlock'],
+    ['ei-prey-coh',     'preyCoh'],
+    ['ei-pred-speed',   'predSpeed'],
+    ['ei-pred-sense',   'predSense'],
+    ['ei-pred-meta',    'predMeta'],
+    ['ei-pred-repro',   'predRepro'],
+    ['ei-pred-patience','predPatience'],
+  ];
+  for (const [id, key] of map) {
+    const el = document.getElementById(id);
+    if (el) el.style.left = `${Math.max(0, Math.min(100, initGenes[key] / GENE_MAX[key] * 100))}%`;
+  }
+}
+
+function drawGraph() {
+  const W = graphCanvas.width, H = graphCanvas.height;
+  gctx.clearRect(0, 0, W, H);
+  if (hist.prey.length < 2) return;
+  const padL = 2, padT = 5, gW = W-4, gH = H-padT-2;
+  gctx.strokeStyle = 'rgba(30,50,30,0.5)'; gctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT+(gH/4)*i;
+    gctx.beginPath(); gctx.moveTo(padL,y); gctx.lineTo(padL+gW,y); gctx.stroke();
+  }
+  function drawLine(data, maxV, color) {
+    if (data.length < 2) return;
+    gctx.beginPath();
+    for (let i = 0; i < data.length; i++) {
+      const x = padL + (i/(HIST_LEN-1))*gW;
+      const y = padT + gH - (data[i]/Math.max(maxV,1))*gH;
+      i === 0 ? gctx.moveTo(x,y) : gctx.lineTo(x,y);
+    }
+    gctx.strokeStyle = color; gctx.lineWidth = 1.5; gctx.stroke();
+  }
+  gctx.globalAlpha = 0.35;
+  drawLine(hist.food, Math.max(maxHistFood,1), '#fde047');
+  gctx.globalAlpha = 1;
+  drawLine(hist.prey, Math.max(maxHistPrey,1), '#4ade80');
+  drawLine(hist.pred, Math.max(maxHistPred,1), '#f87171');
+}
+
+function avg(arr, fn) {
+  if (!arr.length) return 0;
+  return arr.reduce((s,a) => s + fn(a), 0) / arr.length;
+}
+
+function updateEvoTracker() {
+  if (!prey.length && !predators.length) return;
+
+  const avgs = {
+    preyFlee:     avg(prey,      p => p.genes.fleeSpeed),
+    preySense:    avg(prey,      p => p.genes.senseRange),
+    preyMeta:     avg(prey,      p => p.genes.metabolism),
+    preyRepro:    avg(prey,      p => p.genes.reproThresh),
+    preyFlock:    avg(prey,      p => p.genes.flockRange),
+    preyCoh:      avg(prey,      p => p.genes.coh),
+    predSpeed:    avg(predators, p => p.genes.speed),
+    predSense:    avg(predators, p => p.genes.senseRange),
+    predMeta:     avg(predators, p => p.genes.metabolism),
+    predRepro:    avg(predators, p => p.genes.reproThresh),
+    predPatience: avg(predators, p => p.genes.patience),
+  };
+
+  for (const k of Object.keys(avgs)) {
+    traitHist[k].push(avgs[k]);
+    if (traitHist[k].length > TRAIT_HIST) traitHist[k].shift();
+  }
+
+  const entries = [
+    { key: 'preyFlee',     bar: 'eb-prey-flee',     val: 'ev-prey-flee',     arr: 'ea-prey-flee',     fmt: v => v.toFixed(2) },
+    { key: 'preySense',    bar: 'eb-prey-sense',    val: 'ev-prey-sense',    arr: 'ea-prey-sense',    fmt: v => v.toFixed(0) },
+    { key: 'preyMeta',     bar: 'eb-prey-meta',     val: 'ev-prey-meta',     arr: 'ea-prey-meta',     fmt: v => v.toFixed(3) },
+    { key: 'preyRepro',    bar: 'eb-prey-repro',    val: 'ev-prey-repro',    arr: 'ea-prey-repro',    fmt: v => v.toFixed(0) },
+    { key: 'preyFlock',    bar: 'eb-prey-flock',    val: 'ev-prey-flock',    arr: 'ea-prey-flock',    fmt: v => v.toFixed(0) },
+    { key: 'preyCoh',      bar: 'eb-prey-coh',      val: 'ev-prey-coh',      arr: 'ea-prey-coh',      fmt: v => v.toFixed(2) },
+    { key: 'predSpeed',    bar: 'eb-pred-speed',    val: 'ev-pred-speed',    arr: 'ea-pred-speed',    fmt: v => v.toFixed(2) },
+    { key: 'predSense',    bar: 'eb-pred-sense',    val: 'ev-pred-sense',    arr: 'ea-pred-sense',    fmt: v => v.toFixed(0) },
+    { key: 'predMeta',     bar: 'eb-pred-meta',     val: 'ev-pred-meta',     arr: 'ea-pred-meta',     fmt: v => v.toFixed(3) },
+    { key: 'predRepro',    bar: 'eb-pred-repro',    val: 'ev-pred-repro',    arr: 'ea-pred-repro',    fmt: v => v.toFixed(0) },
+    { key: 'predPatience', bar: 'eb-pred-patience', val: 'ev-pred-patience', arr: 'ea-pred-patience', fmt: v => v.toFixed(0) },
+  ];
+
+  for (const e of entries) {
+    const v   = avgs[e.key];
+    const pct = Math.max(2, Math.min(98, v / GENE_MAX[e.key] * 100));
+    const bEl = document.getElementById(e.bar);
+    const vEl = document.getElementById(e.val);
+    const aEl = document.getElementById(e.arr);
+    if (!bEl) continue;
+    bEl.style.width   = pct + '%';
+    vEl.textContent   = e.fmt(v);
+
+    const th = traitHist[e.key];
+    if (th.length >= 8) {
+      const n   = th.length, q = Math.ceil(n/3);
+      const old = th.slice(0, q).reduce((s,x)=>s+x,0) / q;
+      const nv  = th.slice(-q).reduce((s,x)=>s+x,0) / q;
+      const d   = (nv - old) / (Math.abs(old) || 1);
+      aEl.textContent = d > 0.02 ? '↑' : d < -0.02 ? '↓' : '—';
+      aEl.className   = `evo-arrow ${d > 0.02 ? 'arrow-up' : d < -0.02 ? 'arrow-down' : 'arrow-flat'}`;
+    }
+  }
+}
+
+let preyExtinct = false, predExtinct = false;
+
+function checkExtinction() {
+  const ov = document.getElementById('extinction-overlay');
+  if (!preyExtinct && prey.length === 0 && tick > 200) {
+    preyExtinct = true;
+    ov.style.display = 'block';
+    document.getElementById('ext-title').style.color = '#f87171';
+    document.getElementById('ext-title').textContent = 'Prey Extinct';
+    document.getElementById('ext-msg').textContent   = 'All prey died. Predators will follow.';
+  }
+  if (!predExtinct && predators.length === 0 && prey.length === 0 && tick > 200) {
+    predExtinct = true; ov.style.display = 'block';
+    document.getElementById('ext-title').style.color = '#a78bfa';
+    document.getElementById('ext-title').textContent = 'Ecosystem Collapsed';
+    document.getElementById('ext-msg').textContent   = 'All agents died. Try different parameters.';
+  }
+}
+
+function getPhase() {
+  if (hist.prey.length < 3) return '—';
+  const recent = hist.prey.slice(-20);
+  const last = recent[recent.length-1], prev = recent[recent.length-6] || recent[0];
+  const d = (last - prev) / (Math.abs(prev) || 1);
+  return d > 0.05 ? '↑ Prey ↑' : d < -0.05 ? '↓ Prey ↓' : 'Stable';
+}
+
+function updateStats() {
+  document.getElementById('stat-prey').textContent  = prey.length;
+  document.getElementById('stat-pred').textContent  = predators.length;
+  document.getElementById('stat-food').textContent  = foods.length;
+  document.getElementById('stat-gen').textContent   = maxGen;
+  document.getElementById('stat-phase').textContent = getPhase();
+  fpsFrames++;
+  const now = performance.now();
+  if (now - lastFpsTime > 600) {
+    fps = Math.round(fpsFrames / ((now - lastFpsTime) / 1000));
+    fpsFrames = 0; lastFpsTime = now;
+    document.getElementById('stat-fps').textContent = fps;
+  }
+}
+
+function draw() {
+  const W = simCanvas.width, H = simCanvas.height;
+  ctx.fillStyle = '#060c08'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(20,40,20,0.28)'; ctx.lineWidth = 0.5;
+  const gs = 55;
+  for (let x = 0; x <= W; x += gs) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y <= H; y += gs) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  for (const f of foods)      drawFood(f, tick);
+  for (const p of prey)       p.draw(p === selectedAgent);
+  for (const p of predators)  p.draw(p === selectedAgent);
+  for (const e of effects)    e.draw();
+}
+
+function loop() {
+  if (!paused) {
+    tick++;
+
+    if (tick % Math.max(1, P.foodRegenRate|0) === 0 && foods.length < P.maxFood)
+      spawnFood();
+
+    for (const p of prey)      p.update(prey, predators, foods);
+    for (const p of predators) p.update(prey, predators);
+
+    for (let i = prey.length - 1; i >= 0; i--) {
+      if (!prey[i].alive) {
+        effects.push(new Effect(prey[i].x, prey[i].y, 'corpse_prey'));
+        prey.splice(i, 1);
+      }
+    }
+    for (let i = predators.length - 1; i >= 0; i--) {
+      if (!predators[i].alive) {
+        effects.push(new Effect(predators[i].x, predators[i].y, 'corpse_pred'));
+        predators.splice(i, 1);
+      }
+    }
+
+    for (let i = effects.length - 1; i >= 0; i--) {
+      if (!effects[i].tick()) effects.splice(i, 1);
+    }
+
+    if (tick % 20 === 0) {
+      hist.prey.push(prey.length); hist.pred.push(predators.length); hist.food.push(foods.length);
+      if (hist.prey.length > HIST_LEN) { hist.prey.shift(); hist.pred.shift(); hist.food.shift(); }
+      maxHistPrey = Math.max(maxHistPrey, prey.length);
+      maxHistPred = Math.max(maxHistPred, predators.length);
+      maxHistFood = Math.max(maxHistFood, foods.length);
+    }
+
+    if (tick % 30 === 0) updateEvoTracker();
+
+    updateStats();
+    checkExtinction();
+  }
+
+  draw();
+  if (tick % 5 === 0) drawGraph();
+  requestAnimationFrame(loop);
+}
+
+document.getElementById('btn-pause').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('btn-pause').textContent = paused ? '▶ Resume' : '⏸ Pause';
+  document.getElementById('paused-badge').style.display = paused ? 'block' : 'none';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  paused = false; preyExtinct = false; predExtinct = false;
+  document.getElementById('btn-pause').textContent = '⏸ Pause';
+  document.getElementById('paused-badge').style.display = 'none';
+  init(); drawGradLegend();
+});
+
+simCanvas.addEventListener('click', e => {
+  const rect = simCanvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (simCanvas.width  / rect.width);
+  const my = (e.clientY - rect.top)  * (simCanvas.height / rect.height);
+  let best = null, bestD = 24;
+  for (const p of [...prey, ...predators]) {
+    const d = hypot(p.x - mx, p.y - my);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  selectedAgent = (best === selectedAgent) ? null : best;
+});
+
+window.addEventListener('resize', () => {
+  resize();
+  for (const p of [...prey, ...predators]) {
+    if (p.x > simCanvas.width)  p.x = Math.random() * simCanvas.width;
+    if (p.y > simCanvas.height) p.y = Math.random() * simCanvas.height;
+  }
+});
+
+init();
+drawGradLegend();
+loop();
+</script>
+</body>
+</html>

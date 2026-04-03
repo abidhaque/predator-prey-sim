@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Predator-Prey Ecosystem</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #060c08;
+      color: #b8d4b8;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: #0b1410;
+      border-right: 1px solid #162418;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    #sidebar-header {
+      padding: 18px 20px 12px;
+      border-bottom: 1px solid #162418;
+      background: #0d1812;
+    }
+
+    #sidebar-header h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #4ade80;
+      letter-spacing: 0.02em;
+    }
+
+    #sidebar-header p {
+      margin-top: 5px;
+      font-size: 0.73rem;
+      color: #4a6650;
+      line-height: 1.5;
+    }
+
+    .section {
+      padding: 14px 18px;
+      border-bottom: 1px solid #162418;
+    }
+
+    .section-title {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3a5540;
+      margin-bottom: 12px;
+    }
+
+    .param-row { margin-bottom: 13px; }
+    .param-row:last-child { margin-bottom: 0; }
+
+    .param-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 5px;
+    }
+
+    .param-name { font-size: 0.78rem; color: #8aaa8a; }
+
+    .param-value {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #4ade80;
+      min-width: 32px;
+      text-align: right;
+    }
+
+    .param-hint {
+      font-size: 0.66rem;
+      color: #3a5540;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: #162418;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #22c55e;
+      border: 2px solid #4ade80;
+      cursor: pointer;
+    }
+
+    /* Colour-coded sliders */
+    .prey-param input[type="range"] { background: #0d2016; }
+    .prey-param input[type="range"]::-webkit-slider-thumb { background: #22c55e; border-color: #86efac; }
+    .prey-param .param-value { color: #4ade80; }
+
+    .pred-param input[type="range"] { background: #200d0d; }
+    .pred-param input[type="range"]::-webkit-slider-thumb { background: #ef4444; border-color: #fca5a5; }
+    .pred-param .param-value { color: #f87171; }
+
+    .food-param input[type="range"] { background: #1a1a08; }
+    .food-param input[type="range"]::-webkit-slider-thumb { background: #eab308; border-color: #fde047; }
+    .food-param .param-value { color: #fde047; }
+
+    /* ── Population Graph ── */
+    #graph-section {
+      padding: 12px 18px;
+      border-bottom: 1px solid #162418;
+    }
+
+    #graph-title {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #3a5540;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #graph-legend {
+      display: flex;
+      gap: 10px;
+      font-size: 0.63rem;
+    }
+
+    .gl { display: flex; align-items: center; gap: 4px; }
+    .gl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+    #graph-canvas {
+      width: 100%;
+      height: 100px;
+      display: block;
+      border-radius: 6px;
+      background: #060c08;
+      border: 1px solid #162418;
+    }
+
+    #graph-note {
+      font-size: 0.62rem;
+      color: #3a5540;
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    /* ── Stats ── */
+    #stats {
+      padding: 12px 18px;
+      border-bottom: 1px solid #162418;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+    }
+
+    .stat-box {
+      background: #0d1812;
+      border: 1px solid #162418;
+      border-radius: 7px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    .stat-box .s-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #3a5540;
+    }
+
+    .stat-box .s-value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+
+    .s-prey  { color: #4ade80; }
+    .s-pred  { color: #f87171; }
+    .s-food  { color: #fde047; }
+    .s-gen   { color: #67e8f9; }
+    .s-fps   { color: #a78bfa; }
+    .s-phase { color: #fb923c; }
+
+    /* ── Buttons ── */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px 18px;
+      margin-top: auto;
+      border-top: 1px solid #162418;
+    }
+
+    button {
+      flex: 1;
+      padding: 8px 0;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.77rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    #btn-pause {
+      background: #0d2016;
+      color: #4ade80;
+      border: 1px solid #1a3520;
+    }
+
+    #btn-reset {
+      background: #162418;
+      color: #8aaa8a;
+      border: 1px solid #1e3020;
+    }
+
+    button:hover { opacity: 0.8; }
+
+    /* ── Canvas wrap ── */
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    canvas { display: block; }
+
+    #sim-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Overlays ── */
+    #info-overlay {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: rgba(6,12,8,0.80);
+      border: 1px solid #162418;
+      border-radius: 9px;
+      padding: 10px 14px;
+      font-size: 0.7rem;
+      line-height: 1.8;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+    }
+
+    .oi-row { display: flex; align-items: center; gap: 7px; }
+    .oi-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    #extinction-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(6,12,8,0.92);
+      border: 1px solid #2a4030;
+      border-radius: 14px;
+      padding: 22px 36px;
+      text-align: center;
+      display: none;
+      pointer-events: none;
+    }
+
+    #extinction-overlay h2 {
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+
+    #extinction-overlay p {
+      font-size: 0.75rem;
+      color: #4a6650;
+    }
+
+    #paused-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      background: rgba(6,12,8,0.88);
+      border: 1px solid #1a3020;
+      border-radius: 12px;
+      padding: 12px 26px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #4ade80;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ SIDEBAR ═══════════════════════════════════ -->
+<div id="sidebar">
+
+  <div id="sidebar-header">
+    <h1>Predator-Prey Ecosystem</h1>
+    <p>Agent-based Lotka-Volterra model. Populations rise and fall based on energy — no hard-coded birth/death rates.</p>
+  </div>
+
+  <!-- Prey ecology -->
+  <div class="section">
+    <div class="section-title">Prey (green)</div>
+
+    <div class="param-row prey-param">
+      <div class="param-label">
+        <span class="param-name">Repro. Energy Threshold</span>
+        <span class="param-value" id="val-prey-repro">80</span>
+      </div>
+      <input type="range" id="sl-prey-repro" min="30" max="150" step="5" value="80" />
+      <div class="param-hint">Energy needed to reproduce. Lower = breeds faster.</div>
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label">
+        <span class="param-name">Energy per Food</span>
+        <span class="param-value" id="val-prey-food-e">28</span>
+      </div>
+      <input type="range" id="sl-prey-food-e" min="5" max="70" step="1" value="28" />
+      <div class="param-hint">Energy gained when eating a food item.</div>
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label">
+        <span class="param-name">Energy Drain Rate</span>
+        <span class="param-value" id="val-prey-drain">0.08</span>
+      </div>
+      <input type="range" id="sl-prey-drain" min="0.01" max="0.4" step="0.01" value="0.08" />
+      <div class="param-hint">Energy lost per frame. Higher = starves faster.</div>
+    </div>
+
+    <div class="param-row prey-param">
+      <div class="param-label">
+        <span class="param-name">Flee Speed</span>
+        <span class="param-value" id="val-prey-flee">4.2</span>
+      </div>
+      <input type="range" id="sl-prey-flee" min="1" max="8" step="0.1" value="4.2" />
+      <div class="param-hint">Speed burst when evading a predator.</div>
+    </div>
+  </div>
+
+  <!-- Predator ecology -->
+  <div class="section">
+    <div class="section-title">Predators (red)</div>
+
+    <div class="param-row pred-param">
+      <div class="param-label">
+        <span class="param-name">Repro. Energy Threshold</span>
+        <span class="param-value" id="val-pred-repro">120</span>
+      </div>
+      <input type="range" id="sl-pred-repro" min="40" max="250" step="5" value="120" />
+      <div class="param-hint">Energy needed to reproduce. Lower = breeds faster.</div>
+    </div>
+
+    <div class="param-row pred-param">
+      <div class="param-label">
+        <span class="param-name">Energy per Kill</span>
+        <span class="param-value" id="val-pred-kill-e">70</span>
+      </div>
+      <input type="range" id="sl-pred-kill-e" min="10" max="150" step="5" value="70" />
+      <div class="param-hint">Energy gained when catching prey.</div>
+    </div>
+
+    <div class="param-row pred-param">
+      <div class="param-label">
+        <span class="param-name">Energy Drain Rate</span>
+        <span class="param-value" id="val-pred-drain">0.20</span>
+      </div>
+      <input type="range" id="sl-pred-drain" min="0.02" max="0.8" step="0.02" value="0.20" />
+      <div class="param-hint">Predators starve faster than prey by default.</div>
+    </div>
+
+    <div class="param-row pred-param">
+      <div class="param-label">
+        <span class="param-name">Chase Speed</span>
+        <span class="param-value" id="val-pred-speed">3.0</span>
+      </div>
+      <input type="range" id="sl-pred-speed" min="0.5" max="7" step="0.1" value="3.0" />
+      <div class="param-hint">Try setting below prey speed to see prey always escape.</div>
+    </div>
+  </div>
+
+  <!-- Food / environment -->
+  <div class="section">
+    <div class="section-title">Environment (food)</div>
+
+    <div class="param-row food-param">
+      <div class="param-label">
+        <span class="param-name">Food Abundance (max)</span>
+        <span class="param-value" id="val-max-food">90</span>
+      </div>
+      <input type="range" id="sl-max-food" min="10" max="300" step="5" value="90" />
+      <div class="param-hint">Maximum food items on screen at once.</div>
+    </div>
+
+    <div class="param-row food-param">
+      <div class="param-label">
+        <span class="param-name">Food Regen Speed</span>
+        <span class="param-value" id="val-food-regen">12</span>
+      </div>
+      <input type="range" id="sl-food-regen" min="2" max="60" step="1" value="12" />
+      <div class="param-hint">Frames between each new food item spawning. Lower = faster.</div>
+    </div>
+  </div>
+
+  <!-- Prey flocking -->
+  <div class="section">
+    <div class="section-title">Prey Flocking</div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name" style="color:#f87171">Separation</span>
+        <span class="param-value" id="val-sep" style="color:#f87171">1.5</span>
+      </div>
+      <input type="range" id="sl-sep" min="0" max="5" step="0.1" value="1.5" style="background:#200d0d" />
+      <div class="param-hint">Avoid crowding — makes the school spread out.</div>
+    </div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name" style="color:#34d399">Alignment</span>
+        <span class="param-value" id="val-align" style="color:#34d399">1.0</span>
+      </div>
+      <input type="range" id="sl-align" min="0" max="5" step="0.1" value="1.0" style="background:#0d2016" />
+    </div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name" style="color:#a78bfa">Cohesion</span>
+        <span class="param-value" id="val-coh" style="color:#a78bfa">0.8</span>
+      </div>
+      <input type="range" id="sl-coh" min="0" max="5" step="0.1" value="0.8" style="background:#12102a" />
+    </div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name">Visual Range</span>
+        <span class="param-value" id="val-flock-range">65</span>
+      </div>
+      <input type="range" id="sl-flock-range" min="15" max="180" step="5" value="65" />
+    </div>
+  </div>
+
+  <!-- Initial populations -->
+  <div class="section">
+    <div class="section-title">Initial Population (reset to apply)</div>
+
+    <div class="param-row prey-param">
+      <div class="param-label">
+        <span class="param-name">Initial Prey</span>
+        <span class="param-value" id="val-init-prey">80</span>
+      </div>
+      <input type="range" id="sl-init-prey" min="5" max="200" step="5" value="80" />
+    </div>
+
+    <div class="param-row pred-param">
+      <div class="param-label">
+        <span class="param-name">Initial Predators</span>
+        <span class="param-value" id="val-init-pred">6</span>
+      </div>
+      <input type="range" id="sl-init-pred" min="1" max="40" step="1" value="6" />
+    </div>
+  </div>
+
+  <!-- Population graph -->
+  <div id="graph-section">
+    <div id="graph-title">
+      Population Over Time
+      <div id="graph-legend">
+        <div class="gl"><div class="gl-dot" style="background:#4ade80"></div>Prey</div>
+        <div class="gl"><div class="gl-dot" style="background:#f87171"></div>Pred</div>
+        <div class="gl"><div class="gl-dot" style="background:#fde047"></div>Food</div>
+      </div>
+    </div>
+    <canvas id="graph-canvas"></canvas>
+    <div id="graph-note">Watch for oscillation — the Lotka-Volterra cycle</div>
+  </div>
+
+  <!-- Stats -->
+  <div id="stats">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="s-label">Prey</div><div class="s-value s-prey" id="stat-prey">—</div></div>
+      <div class="stat-box"><div class="s-label">Predators</div><div class="s-value s-pred" id="stat-pred">—</div></div>
+      <div class="stat-box"><div class="s-label">Food</div><div class="s-value s-food" id="stat-food">—</div></div>
+      <div class="stat-box"><div class="s-label">Generation</div><div class="s-value s-gen" id="stat-gen">—</div></div>
+      <div class="stat-box"><div class="s-label">FPS</div><div class="s-value s-fps" id="stat-fps">—</div></div>
+      <div class="stat-box"><div class="s-label">Phase</div><div class="s-value s-phase" id="stat-phase">—</div></div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button id="btn-pause">⏸ Pause</button>
+    <button id="btn-reset">↺ Reset</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ CANVAS ═══════════════════════════════════ -->
+<div id="canvas-wrap">
+  <canvas id="sim-canvas"></canvas>
+
+  <div id="info-overlay">
+    <div class="oi-row"><div class="oi-dot" style="background:#4ade80"></div><span style="color:#8aaa8a">Prey — flock, eat food, flee predators</span></div>
+    <div class="oi-row"><div class="oi-dot" style="background:#f87171"></div><span style="color:#8aaa8a">Predators — chase, eat prey, reproduce</span></div>
+    <div class="oi-row"><div class="oi-dot" style="background:#fde047"></div><span style="color:#8aaa8a">Food — regrows over time</span></div>
+    <div style="margin-top:6px;font-size:0.63rem;color:#3a5540">Brightness = energy level<br>Click an agent to inspect it</div>
+  </div>
+
+  <div id="extinction-overlay">
+    <h2 id="ext-title"></h2>
+    <p id="ext-msg"></p>
+  </div>
+
+  <div id="paused-badge">PAUSED</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  PREDATOR-PREY ECOSYSTEM  —  Agent-based simulation
+// ══════════════════════════════════════════════════════
+
+const simCanvas  = document.getElementById('sim-canvas');
+const ctx        = simCanvas.getContext('2d');
+const wrap       = document.getElementById('canvas-wrap');
+const graphCanvas = document.getElementById('graph-canvas');
+const gctx       = graphCanvas.getContext('2d');
+
+// ── Parameters (all live except initPrey/initPred) ──
+const P = {
+  preyReproThreshold: 80,
+  predReproThreshold: 120,
+  preyFoodEnergy:     28,
+  predPreyEnergy:     70,
+  preyEnergyDrain:    0.08,
+  predEnergyDrain:    0.20,
+  foodRegenRate:      12,
+  maxFood:            90,
+  preySpeed:          2.5,
+  predSpeed:          3.0,
+  preyFleeSpeed:      4.2,
+  predDetectRange:    90,
+  predChaseRange:     130,
+  sep:       1.5,
+  align:     1.0,
+  coh:       0.8,
+  flockRange: 65,
+  initPrey:  80,
+  initPred:  6,
+};
+
+const PREY_MAX_E   = 100;
+const PRED_MAX_E   = 180;
+const EAT_RADIUS   = 12;
+const KILL_RADIUS  = 14;
+const MAX_PREY     = 350;
+const MAX_PRED     = 70;
+
+// ── Wire sliders ──
+function bindSlider(id, key, displayId, fmt) {
+  const el = document.getElementById(id);
+  const dsp = document.getElementById(displayId);
+  el.addEventListener('input', () => {
+    const v = parseFloat(el.value);
+    P[key] = v;
+    dsp.textContent = fmt ? fmt(v) : v;
+  });
+}
+
+bindSlider('sl-prey-repro',  'preyReproThreshold', 'val-prey-repro');
+bindSlider('sl-prey-food-e', 'preyFoodEnergy',     'val-prey-food-e');
+bindSlider('sl-prey-drain',  'preyEnergyDrain',    'val-prey-drain');
+bindSlider('sl-prey-flee',   'preyFleeSpeed',      'val-prey-flee');
+bindSlider('sl-pred-repro',  'predReproThreshold', 'val-pred-repro');
+bindSlider('sl-pred-kill-e', 'predPreyEnergy',     'val-pred-kill-e');
+bindSlider('sl-pred-drain',  'predEnergyDrain',    'val-pred-drain');
+bindSlider('sl-pred-speed',  'predSpeed',          'val-pred-speed');
+bindSlider('sl-max-food',    'maxFood',            'val-max-food');
+bindSlider('sl-food-regen',  'foodRegenRate',      'val-food-regen');
+bindSlider('sl-sep',         'sep',                'val-sep');
+bindSlider('sl-align',       'align',              'val-align');
+bindSlider('sl-coh',         'coh',                'val-coh');
+bindSlider('sl-flock-range', 'flockRange',         'val-flock-range');
+bindSlider('sl-init-prey',   'initPrey',           'val-init-prey');
+bindSlider('sl-init-pred',   'initPred',           'val-init-pred');
+
+// ── Utility ──
+function vLimit(vx, vy, max) {
+  const m = Math.hypot(vx, vy);
+  return m > max ? [vx / m * max, vy / m * max] : [vx, vy];
+}
+
+function vSetMag(vx, vy, mag) {
+  const m = Math.hypot(vx, vy) || 1;
+  return [vx / m * mag, vy / m * mag];
+}
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+
+// ── Particle effects ──
+const effects = [];
+
+class Effect {
+  constructor(x, y, type) {
+    this.x = x; this.y = y; this.type = type;
+    this.life = 1.0;
+    // corpse fades very slowly; other effects are quick bursts
+    this.decay = type === 'corpse_prey' || type === 'corpse_pred' ? 0.0028 : 0.055;
+    this.r = type === 'kill' ? 18 : type === 'birth' ? 12
+           : type === 'corpse_prey' ? 7 : type === 'corpse_pred' ? 11 : 8;
+  }
+  tick()  { this.life -= this.decay; return this.life > 0; }
+  draw() {
+    const cols = {
+      eat: '#22c55e', kill: '#ef4444', birth: '#60a5fa',
+      corpse_prey: '#4ade80', corpse_pred: '#f87171',
+    };
+    ctx.save();
+    if (this.type === 'corpse_prey' || this.type === 'corpse_pred') {
+      // Static fading ring — stays in place, shrinks slightly as it fades
+      ctx.globalAlpha = this.life * 0.55;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r * (0.7 + 0.3 * this.life), 0, Math.PI * 2);
+      ctx.strokeStyle = cols[this.type];
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([3, 3]);
+      ctx.stroke();
+      // Faint fill so it reads as a "body"
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r * (0.7 + 0.3 * this.life), 0, Math.PI * 2);
+      ctx.fillStyle = cols[this.type];
+      ctx.globalAlpha = this.life * 0.08;
+      ctx.fill();
+    } else {
+      ctx.globalAlpha = this.life * 0.7;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r * (2 - this.life), 0, Math.PI * 2);
+      ctx.strokeStyle = cols[this.type];
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+// ── Food ──
+const foods = [];
+
+function spawnFood() {
+  const m = 15;
+  foods.push({
+    x: rand(m, simCanvas.width  - m),
+    y: rand(m, simCanvas.height - m),
+    phase: rand(0, Math.PI * 2),
+  });
+}
+
+function drawFood(f, t) {
+  const pulse = 0.85 + 0.15 * Math.sin(f.phase + t * 0.05);
+  ctx.save();
+  ctx.globalAlpha = 0.9;
+  ctx.beginPath();
+  ctx.arc(f.x, f.y, 3.5 * pulse, 0, Math.PI * 2);
+  ctx.fillStyle = '#a3e635';
+  ctx.fill();
+  // Inner bright spot
+  ctx.beginPath();
+  ctx.arc(f.x - 0.8, f.y - 0.8, 1.2, 0, Math.PI * 2);
+  ctx.fillStyle = '#ecfccb';
+  ctx.fill();
+  ctx.restore();
+}
+
+// ── Prey ──
+class Prey {
+  constructor(x, y, energy) {
+    this.x = x; this.y = y;
+    const a = rand(0, Math.PI * 2);
+    this.vx = Math.cos(a) * rand(1, 2);
+    this.vy = Math.sin(a) * rand(1, 2);
+    this.energy   = energy ?? rand(35, 60);
+    this.alive    = true;
+    this.hue      = rand(160, 190);
+    this.sz       = rand(4.5, 6);
+    this.cooldown = rand(0, 60) | 0;  // stagger initial reproduction
+    this.generation = 0;
+  }
+
+  update(preyArr, predArr, foodArr) {
+    this.cooldown = Math.max(0, this.cooldown - 1);
+
+    // Drain
+    this.energy -= P.preyEnergyDrain;
+    if (this.energy <= 0) { this.alive = false; return; }
+
+    // Eat nearby food
+    for (let i = foodArr.length - 1; i >= 0; i--) {
+      const f = foodArr[i];
+      if (Math.hypot(f.x - this.x, f.y - this.y) < EAT_RADIUS) {
+        this.energy = Math.min(PREY_MAX_E, this.energy + P.preyFoodEnergy);
+        effects.push(new Effect(f.x, f.y, 'eat'));
+        foodArr.splice(i, 1);
+        break;
+      }
+    }
+
+    // Reproduce
+    if (this.energy >= P.preyReproThreshold && this.cooldown === 0 && preyArr.length < MAX_PREY) {
+      this.energy  -= P.preyReproThreshold * 0.48;
+      this.cooldown = 180;
+      const child = new Prey(
+        this.x + rand(-18, 18),
+        this.y + rand(-18, 18),
+        P.preyReproThreshold * 0.28
+      );
+      child.generation = this.generation + 1;
+      preyArr.push(child);
+      effects.push(new Effect(this.x, this.y, 'birth'));
+      maxGen = Math.max(maxGen, child.generation);
+    }
+
+    // ── Forces ──
+    let fx = 0, fy = 0;
+    let fleeing = false;
+    let closestThreat = Infinity;
+
+    // 1. Flee predators (dominant force)
+    for (const pred of predArr) {
+      if (!pred.alive) continue;
+      const dx = this.x - pred.x, dy = this.y - pred.y;
+      const d = Math.hypot(dx, dy);
+      if (d < P.predDetectRange && d > 0) {
+        fleeing = true;
+        closestThreat = Math.min(closestThreat, d);
+        const strength = (1 - d / P.predDetectRange);
+        let [px, py] = vSetMag(dx, dy, P.preyFleeSpeed);
+        px -= this.vx; py -= this.vy;
+        [px, py] = vLimit(px, py, 0.35);
+        fx += px * strength * 4;
+        fy += py * strength * 4;
+      }
+    }
+
+    // 2. Seek food when hungry (only if not in immediate danger)
+    if (!fleeing || closestThreat > P.predDetectRange * 0.55) {
+      if (this.energy < P.preyReproThreshold * 0.65) {
+        let bestF = null, bestD = P.flockRange * 0.9;
+        for (const f of foodArr) {
+          const d = Math.hypot(f.x - this.x, f.y - this.y);
+          if (d < bestD) { bestD = d; bestF = f; }
+        }
+        if (bestF) {
+          const dx = bestF.x - this.x, dy = bestF.y - this.y;
+          let [gx, gy] = vSetMag(dx, dy, P.preySpeed);
+          gx -= this.vx; gy -= this.vy;
+          [gx, gy] = vLimit(gx, gy, 0.12);
+          fx += gx * 0.6; fy += gy * 0.6;
+        }
+      }
+    }
+
+    // 3. Boids flocking (moderate priority)
+    if (!fleeing || closestThreat > P.predDetectRange * 0.4) {
+      let sx = 0, sy = 0, ax = 0, ay = 0, cx = 0, cy = 0;
+      let sepN = 0, neighN = 0;
+
+      for (const o of preyArr) {
+        if (o === this || !o.alive) continue;
+        const dx = o.x - this.x, dy = o.y - this.y;
+        const d = Math.hypot(dx, dy);
+        if (d < P.flockRange && d > 0) {
+          neighN++;
+          ax += o.vx; ay += o.vy;
+          cx += o.x;  cy += o.y;
+          if (d < 20) { sx -= dx / d; sy -= dy / d; sepN++; }
+        }
+      }
+
+      if (neighN > 0) {
+        ax /= neighN; ay /= neighN;
+        [ax, ay] = vSetMag(ax, ay, P.preySpeed);
+        ax -= this.vx; ay -= this.vy;
+        [ax, ay] = vLimit(ax, ay, 0.09);
+
+        cx = cx / neighN - this.x; cy = cy / neighN - this.y;
+        [cx, cy] = vSetMag(cx, cy, P.preySpeed);
+        cx -= this.vx; cy -= this.vy;
+        [cx, cy] = vLimit(cx, cy, 0.09);
+
+        fx += ax * P.align + cx * P.coh;
+        fy += ay * P.align + cy * P.coh;
+      }
+
+      if (sepN > 0) {
+        [sx, sy] = vSetMag(sx, sy, P.preySpeed);
+        sx -= this.vx; sy -= this.vy;
+        [sx, sy] = vLimit(sx, sy, 0.1);
+        fx += sx * P.sep; fy += sy * P.sep;
+      }
+    }
+
+    this.vx += fx; this.vy += fy;
+    const maxSpd = fleeing ? P.preyFleeSpeed : P.preySpeed;
+    [this.vx, this.vy] = vLimit(this.vx, this.vy, maxSpd);
+
+    if (Math.hypot(this.vx, this.vy) < 0.25) {
+      this.vx += rand(-0.5, 0.5);
+      this.vy += rand(-0.5, 0.5);
+    }
+
+    this.x += this.vx; this.y += this.vy;
+    const W = simCanvas.width, H = simCanvas.height;
+    if (this.x < -10) this.x = W + 10; if (this.x > W + 10) this.x = -10;
+    if (this.y < -10) this.y = H + 10; if (this.y > H + 10) this.y = -10;
+  }
+
+  draw(selected) {
+    const angle   = Math.atan2(this.vy, this.vx);
+    const eRatio  = Math.max(0.1, this.energy / PREY_MAX_E);
+    const bright  = 35 + eRatio * 35;
+    const sz      = this.sz;
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(angle);
+
+    // Body
+    ctx.beginPath();
+    ctx.moveTo(sz * 1.5, 0);
+    ctx.lineTo(-sz * 0.7, -sz * 0.65);
+    ctx.lineTo(-sz * 1.3, 0);
+    ctx.lineTo(-sz * 0.7,  sz * 0.65);
+    ctx.closePath();
+    ctx.fillStyle = `hsl(${this.hue}, 70%, ${bright}%)`;
+    ctx.fill();
+
+    // Energy bar (tiny)
+    const barW = sz * 2.5;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(-barW / 2, sz + 2, barW, 2.5);
+    ctx.fillStyle = eRatio > 0.5 ? '#4ade80' : eRatio > 0.25 ? '#fbbf24' : '#ef4444';
+    ctx.fillRect(-barW / 2, sz + 2, barW * eRatio, 2.5);
+
+    if (selected) {
+      ctx.restore();
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.beginPath();
+      ctx.arc(0, 0, P.predDetectRange, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(248,113,113,0.25)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 0, P.flockRange, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(74,222,128,0.2)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+}
+
+// ── Predator ──
+class Predator {
+  constructor(x, y, energy) {
+    this.x = x; this.y = y;
+    const a = rand(0, Math.PI * 2);
+    this.vx = Math.cos(a) * 1.5;
+    this.vy = Math.sin(a) * 1.5;
+    this.energy   = energy ?? rand(60, 100);
+    this.alive    = true;
+    this.cooldown = rand(0, 120) | 0;
+    this.sz       = rand(9, 12);
+    this.generation = 0;
+  }
+
+  update(preyArr, predArr) {
+    this.cooldown = Math.max(0, this.cooldown - 1);
+
+    this.energy -= P.predEnergyDrain;
+    if (this.energy <= 0) { this.alive = false; return; }
+
+    let fx = 0, fy = 0;
+
+    // Find nearest prey
+    let target = null, targetDist = P.predChaseRange;
+    for (const p of preyArr) {
+      if (!p.alive) continue;
+      const d = Math.hypot(p.x - this.x, p.y - this.y);
+      if (d < targetDist) { targetDist = d; target = p; }
+    }
+
+    if (target) {
+      const dx = target.x - this.x, dy = target.y - this.y;
+      let [cx, cy] = vSetMag(dx, dy, P.predSpeed);
+      cx -= this.vx; cy -= this.vy;
+      [cx, cy] = vLimit(cx, cy, 0.18);
+      fx += cx * 1.4; fy += cy * 1.4;
+
+      // Kill
+      if (targetDist < KILL_RADIUS) {
+        target.alive = false;
+        this.energy = Math.min(PRED_MAX_E, this.energy + P.predPreyEnergy);
+        effects.push(new Effect(target.x, target.y, 'kill'));
+      }
+    } else {
+      // No prey nearby — wander
+      fx += rand(-0.2, 0.2);
+      fy += rand(-0.2, 0.2);
+    }
+
+    // Separate from other predators
+    for (const o of predArr) {
+      if (o === this || !o.alive) continue;
+      const dx = this.x - o.x, dy = this.y - o.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 45 && d > 0) {
+        fx += (dx / d) * 0.12;
+        fy += (dy / d) * 0.12;
+      }
+    }
+
+    // Reproduce
+    if (this.energy >= P.predReproThreshold && this.cooldown === 0 && predArr.length < MAX_PRED) {
+      this.energy  -= P.predReproThreshold * 0.52;
+      this.cooldown = 400;
+      const child = new Predator(
+        this.x + rand(-25, 25),
+        this.y + rand(-25, 25),
+        P.predReproThreshold * 0.3
+      );
+      child.generation = this.generation + 1;
+      predArr.push(child);
+      effects.push(new Effect(this.x, this.y, 'birth'));
+      maxGen = Math.max(maxGen, child.generation);
+    }
+
+    this.vx += fx; this.vy += fy;
+    [this.vx, this.vy] = vLimit(this.vx, this.vy, P.predSpeed);
+
+    if (Math.hypot(this.vx, this.vy) < 0.3) {
+      this.vx += rand(-0.4, 0.4);
+      this.vy += rand(-0.4, 0.4);
+    }
+
+    this.x += this.vx; this.y += this.vy;
+    const W = simCanvas.width, H = simCanvas.height;
+    if (this.x < -20) this.x = W + 20; if (this.x > W + 20) this.x = -20;
+    if (this.y < -20) this.y = H + 20; if (this.y > H + 20) this.y = -20;
+  }
+
+  draw(selected) {
+    const angle  = Math.atan2(this.vy, this.vx);
+    const eRatio = Math.max(0.1, this.energy / PRED_MAX_E);
+    const bright = 30 + eRatio * 28;
+    const sz     = this.sz;
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    // Detect range (very faint)
+    ctx.beginPath();
+    ctx.arc(0, 0, P.predChaseRange, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(239,68,68,0.05)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.rotate(angle);
+
+    // Body — shark/wolf silhouette
+    ctx.beginPath();
+    ctx.moveTo(sz * 1.4,  0);
+    ctx.lineTo(-sz * 0.5, -sz * 0.9);
+    ctx.lineTo(-sz * 0.9,  -sz * 0.3);
+    ctx.lineTo(-sz * 1.1, 0);
+    ctx.lineTo(-sz * 0.9,  sz * 0.3);
+    ctx.lineTo(-sz * 0.5,  sz * 0.9);
+    ctx.closePath();
+    ctx.fillStyle = `hsl(0, 82%, ${bright}%)`;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,180,180,0.2)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Eye
+    ctx.beginPath();
+    ctx.arc(sz * 0.4, -sz * 0.25, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#fef08a';
+    ctx.fill();
+
+    // Energy bar
+    const barW = sz * 2.4;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(-barW / 2, sz + 3, barW, 2.5);
+    ctx.fillStyle = eRatio > 0.5 ? '#f87171' : eRatio > 0.25 ? '#fb923c' : '#7f1d1d';
+    ctx.fillRect(-barW / 2, sz + 3, barW * eRatio, 2.5);
+
+    if (selected) {
+      ctx.restore();
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.beginPath();
+      ctx.arc(0, 0, P.predChaseRange, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(239,68,68,0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+}
+
+// ── State ──
+let prey = [], predators = [];
+let paused = false;
+let tick = 0;
+let maxGen = 0;
+let selectedAgent = null;
+
+// Population history
+const HIST_LEN = 300;
+const hist = { prey: [], pred: [], food: [] };
+let maxHistPrey = 10, maxHistPred = 5, maxHistFood = 10;
+
+// FPS
+let fps = 0, lastFpsTime = performance.now(), fpsFrames = 0;
+
+function resize() {
+  simCanvas.width  = wrap.clientWidth;
+  simCanvas.height = wrap.clientHeight;
+  graphCanvas.width  = graphCanvas.offsetWidth;
+  graphCanvas.height = graphCanvas.offsetHeight;
+}
+
+function init() {
+  resize();
+  tick = 0; maxGen = 0; selectedAgent = null;
+  prey = []; predators = []; foods.length = 0; effects.length = 0;
+  hist.prey.length = 0; hist.pred.length = 0; hist.food.length = 0;
+  maxHistPrey = P.initPrey; maxHistPred = P.initPred; maxHistFood = P.maxFood;
+
+  const W = simCanvas.width, H = simCanvas.height;
+  for (let i = 0; i < P.initPrey; i++)
+    prey.push(new Prey(rand(50, W - 50), rand(50, H - 50)));
+  for (let i = 0; i < P.initPred; i++)
+    predators.push(new Predator(rand(50, W - 50), rand(50, H - 50)));
+  for (let i = 0; i < P.maxFood * 0.6; i++) spawnFood();
+
+  document.getElementById('extinction-overlay').style.display = 'none';
+}
+
+// ── Draw graph ──
+function drawGraph() {
+  const W = graphCanvas.width, H = graphCanvas.height;
+  gctx.clearRect(0, 0, W, H);
+
+  if (hist.prey.length < 2) return;
+
+  const len = hist.prey.length;
+  const padL = 2, padR = 2, padT = 6, padB = 2;
+  const gW = W - padL - padR;
+  const gH = H - padT - padB;
+
+  // Gridlines
+  gctx.strokeStyle = 'rgba(30,50,30,0.6)';
+  gctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (gH / 4) * i;
+    gctx.beginPath(); gctx.moveTo(padL, y); gctx.lineTo(padL + gW, y); gctx.stroke();
+  }
+
+  function drawLine(data, maxV, color, fill) {
+    if (data.length < 2) return;
+    gctx.beginPath();
+    for (let i = 0; i < data.length; i++) {
+      const x = padL + (i / (HIST_LEN - 1)) * gW;
+      const y = padT + gH - (data[i] / maxV) * gH;
+      i === 0 ? gctx.moveTo(x, y) : gctx.lineTo(x, y);
+    }
+    gctx.strokeStyle = color;
+    gctx.lineWidth = 1.5;
+    gctx.stroke();
+
+    if (fill) {
+      gctx.lineTo(padL + ((data.length - 1) / (HIST_LEN - 1)) * gW, padT + gH);
+      gctx.lineTo(padL, padT + gH);
+      gctx.closePath();
+      gctx.fillStyle = fill;
+      gctx.fill();
+    }
+  }
+
+  const safeMaxP  = Math.max(maxHistPrey, 1);
+  const safeMaxPr = Math.max(maxHistPred, 1);
+  const safeMaxF  = Math.max(maxHistFood, 1);
+
+  // Draw food (background, very faint)
+  gctx.globalAlpha = 0.35;
+  drawLine(hist.food, safeMaxF, '#fde047', 'rgba(253,224,71,0.08)');
+  gctx.globalAlpha = 1;
+  drawLine(hist.prey, safeMaxP, '#4ade80', 'rgba(74,222,128,0.12)');
+  drawLine(hist.pred, safeMaxPr, '#f87171', null);
+
+  // Current values annotation
+  if (hist.prey.length > 0) {
+    const lastPrey = hist.prey[hist.prey.length - 1];
+    const lastPred = hist.pred[hist.pred.length - 1];
+    const x = padL + gW;
+    gctx.font = '9px monospace';
+    gctx.fillStyle = '#4ade80';
+    gctx.textAlign = 'right';
+    gctx.fillText(lastPrey, x, padT + gH - (lastPrey / safeMaxP) * gH - 2);
+    gctx.fillStyle = '#f87171';
+    gctx.fillText(lastPred, x, padT + gH - (lastPred / safeMaxPr) * gH - 2);
+  }
+}
+
+// ── Extinction detection ──
+let preyExtinct = false, predExtinct = false;
+
+function checkExtinction() {
+  const ov = document.getElementById('extinction-overlay');
+  const title = document.getElementById('ext-title');
+  const msg   = document.getElementById('ext-msg');
+
+  if (!preyExtinct && prey.length === 0 && tick > 200) {
+    preyExtinct = true;
+    ov.style.display = 'block';
+    title.style.color = '#f87171';
+    title.textContent = 'Prey Extinct';
+    msg.textContent = 'All prey starved or were eaten. Predators will follow shortly.';
+  }
+  if (!predExtinct && predators.length === 0 && tick > 200) {
+    predExtinct = true;
+    // Show only if prey also gone, otherwise it's fine
+    if (prey.length === 0) {
+      ov.style.display = 'block';
+      title.style.color = '#a78bfa';
+      title.textContent = 'Ecosystem Collapsed';
+      msg.textContent = 'All agents have died. Hit Reset to try different parameters.';
+    }
+  }
+}
+
+// ── Determine cycle phase ──
+function getPhase() {
+  const n = hist.prey.length;
+  if (n < 3) return '—';
+  const recent = hist.prey.slice(-20);
+  const min = Math.min(...recent), max = Math.max(...recent);
+  if (max - min < 3) return 'Stable';
+  const last  = recent[recent.length - 1];
+  const prev  = recent[recent.length - 6] || recent[0];
+  if (last > prev * 1.05) return '↑ Prey ↑';
+  if (last < prev * 0.95) return '↓ Prey ↓';
+  return 'Turning';
+}
+
+// ── Update stats ──
+function updateStats() {
+  document.getElementById('stat-prey').textContent  = prey.length;
+  document.getElementById('stat-pred').textContent  = predators.length;
+  document.getElementById('stat-food').textContent  = foods.length;
+  document.getElementById('stat-gen').textContent   = maxGen;
+  document.getElementById('stat-phase').textContent = getPhase();
+
+  fpsFrames++;
+  const now = performance.now();
+  if (now - lastFpsTime > 600) {
+    fps = Math.round(fpsFrames / ((now - lastFpsTime) / 1000));
+    fpsFrames = 0; lastFpsTime = now;
+    document.getElementById('stat-fps').textContent = fps;
+  }
+}
+
+// ── Render ──
+function draw() {
+  const W = simCanvas.width, H = simCanvas.height;
+
+  // Background — deep dark, subtle green tint
+  ctx.fillStyle = '#060c08';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle terrain texture (faint grid)
+  ctx.strokeStyle = 'rgba(20,40,20,0.3)';
+  ctx.lineWidth = 0.5;
+  const gs = 55;
+  for (let x = 0; x <= W; x += gs) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y <= H; y += gs) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // Food
+  for (const f of foods) drawFood(f, tick);
+
+  // Prey
+  for (const p of prey) p.draw(p === selectedAgent);
+
+  // Predators
+  for (const p of predators) p.draw(p === selectedAgent);
+
+  // Effects
+  for (const e of effects) e.draw();
+}
+
+// ── Main loop ──
+function loop() {
+  if (!paused) {
+    tick++;
+
+    // Food regeneration
+    if (tick % Math.max(1, P.foodRegenRate | 0) === 0 && foods.length < P.maxFood)
+      spawnFood();
+
+    // Update agents
+    for (const p of prey)      p.update(prey, predators, foods);
+    for (const p of predators) p.update(prey, predators);
+
+    // Cull dead — spawn corpse effect at death position
+    for (let i = prey.length - 1; i >= 0; i--) {
+      if (!prey[i].alive) {
+        effects.push(new Effect(prey[i].x, prey[i].y, 'corpse_prey'));
+        prey.splice(i, 1);
+      }
+    }
+    for (let i = predators.length - 1; i >= 0; i--) {
+      if (!predators[i].alive) {
+        effects.push(new Effect(predators[i].x, predators[i].y, 'corpse_pred'));
+        predators.splice(i, 1);
+      }
+    }
+
+    // Tick and cull faded effects
+    for (let i = effects.length - 1; i >= 0; i--) {
+      if (!effects[i].tick()) effects.splice(i, 1);
+    }
+
+    // Record history
+    if (tick % 20 === 0) {
+      hist.prey.push(prey.length);
+      hist.pred.push(predators.length);
+      hist.food.push(foods.length);
+      if (hist.prey.length > HIST_LEN) { hist.prey.shift(); hist.pred.shift(); hist.food.shift(); }
+      maxHistPrey = Math.max(maxHistPrey, prey.length);
+      maxHistPred = Math.max(maxHistPred, predators.length);
+      maxHistFood = Math.max(maxHistFood, foods.length);
+    }
+
+    updateStats();
+    checkExtinction();
+  }
+
+  draw();
+  if (tick % 4 === 0) drawGraph();
+
+  requestAnimationFrame(loop);
+}
+
+// ── Controls ──
+document.getElementById('btn-pause').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('btn-pause').textContent = paused ? '▶ Resume' : '⏸ Pause';
+  document.getElementById('paused-badge').style.display = paused ? 'block' : 'none';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  paused = false;
+  preyExtinct = false; predExtinct = false;
+  document.getElementById('btn-pause').textContent = '⏸ Pause';
+  document.getElementById('paused-badge').style.display = 'none';
+  init();
+});
+
+// Click to select
+simCanvas.addEventListener('click', e => {
+  const rect = simCanvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (simCanvas.width  / rect.width);
+  const my = (e.clientY - rect.top)  * (simCanvas.height / rect.height);
+  let best = null, bestD = 22;
+  for (const p of [...prey, ...predators]) {
+    const d = Math.hypot(p.x - mx, p.y - my);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  selectedAgent = (best === selectedAgent) ? null : best;
+});
+
+window.addEventListener('resize', () => {
+  resize();
+  for (const p of [...prey, ...predators]) {
+    if (p.x > simCanvas.width)  p.x = Math.random() * simCanvas.width;
+    if (p.y > simCanvas.height) p.y = Math.random() * simCanvas.height;
+  }
+});
+
+// ── Kick off ──
+init();
+loop();
+</script>
+</body>
+</html>

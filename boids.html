@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fish Schooling — Boids Simulation</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0e1a;
+      color: #c8d8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: #111827;
+      border-right: 1px solid #1e2d45;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 10;
+    }
+
+    #sidebar-header {
+      padding: 20px 20px 12px;
+      border-bottom: 1px solid #1e2d45;
+    }
+
+    #sidebar-header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #60a5fa;
+      letter-spacing: 0.02em;
+    }
+
+    #sidebar-header p {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: #6b7f9e;
+      line-height: 1.5;
+    }
+
+    .section {
+      padding: 16px 20px;
+      border-bottom: 1px solid #1e2d45;
+    }
+
+    .section-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #4a6080;
+      margin-bottom: 14px;
+    }
+
+    .param-row {
+      margin-bottom: 16px;
+    }
+
+    .param-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+
+    .param-name {
+      font-size: 0.8rem;
+      color: #a0b4cc;
+    }
+
+    .param-value {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #60a5fa;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .param-hint {
+      font-size: 0.68rem;
+      color: #4a6080;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: #1e3050;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #3b82f6;
+      border: 2px solid #60a5fa;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: #60a5fa;
+    }
+
+    /* Color-coded rule sliders */
+    .sep input[type="range"]::-webkit-slider-thumb  { background: #f87171; border-color: #fca5a5; }
+    .align input[type="range"]::-webkit-slider-thumb { background: #34d399; border-color: #6ee7b7; }
+    .coh input[type="range"]::-webkit-slider-thumb  { background: #a78bfa; border-color: #c4b5fd; }
+    .sep .param-value  { color: #f87171; }
+    .align .param-value { color: #34d399; }
+    .coh .param-value  { color: #a78bfa; }
+    .sep input[type="range"]  { background: #2d1818; }
+    .align input[type="range"] { background: #0d2a1e; }
+    .coh input[type="range"]  { background: #1a1528; }
+
+    /* Predator toggle */
+    #predator-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .toggle-label {
+      font-size: 0.8rem;
+      color: #a0b4cc;
+    }
+
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 22px;
+    }
+
+    .toggle input { display: none; }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: #1e2d45;
+      border-radius: 11px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle input:checked + .toggle-track { background: #ef4444; }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #6b7f9e;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .toggle input:checked + .toggle-track::after {
+      transform: translateX(18px);
+      background: #fff;
+    }
+
+    /* Stats */
+    #stats {
+      padding: 14px 20px;
+      background: #0d1526;
+      border-top: 1px solid #1e2d45;
+      margin-top: auto;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: #111827;
+      border: 1px solid #1e2d45;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .stat-box .label {
+      font-size: 0.63rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #4a6080;
+    }
+
+    .stat-box .value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #60a5fa;
+      margin-top: 2px;
+    }
+
+    #legend {
+      padding: 12px 20px;
+      border-top: 1px solid #1e2d45;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 0.72rem;
+      color: #6b7f9e;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      padding: 14px 20px;
+      border-top: 1px solid #1e2d45;
+    }
+
+    button {
+      flex: 1;
+      padding: 8px 0;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    #btn-pause {
+      background: #1e3a5f;
+      color: #60a5fa;
+      border: 1px solid #2d5080;
+    }
+
+    #btn-reset {
+      background: #1e2d45;
+      color: #a0b4cc;
+      border: 1px solid #2d4060;
+    }
+
+    button:hover { opacity: 0.85; }
+
+    /* ── Canvas area ── */
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Rule explanation overlay */
+    #rules-overlay {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(10, 14, 26, 0.82);
+      border: 1px solid #1e2d45;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.72rem;
+      line-height: 1.7;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+      max-width: 220px;
+    }
+
+    #rules-overlay .rule { display: flex; align-items: center; gap: 8px; }
+    #rules-overlay .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    #rules-overlay .dot.sep   { background: #f87171; }
+    #rules-overlay .dot.align { background: #34d399; }
+    #rules-overlay .dot.coh   { background: #a78bfa; }
+
+    #paused-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(10,14,26,0.85);
+      border: 1px solid #2d4060;
+      border-radius: 12px;
+      padding: 14px 28px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #60a5fa;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<div id="sidebar">
+
+  <div id="sidebar-header">
+    <h1>Fish Schooling</h1>
+    <p>Emergent collective behavior from 3 local rules. Each fish only senses its neighbors — no global coordination exists.</p>
+  </div>
+
+  <!-- Core rules -->
+  <div class="section">
+    <div class="section-title">The Three Rules</div>
+
+    <div class="param-row sep">
+      <div class="param-label">
+        <span class="param-name">Separation</span>
+        <span class="param-value" id="val-sep">1.5</span>
+      </div>
+      <input type="range" id="sl-sep" min="0" max="5" step="0.1" value="1.5" />
+      <div class="param-hint">Avoid crowding neighbors — push away from fish that get too close.</div>
+    </div>
+
+    <div class="param-row align">
+      <div class="param-label">
+        <span class="param-name">Alignment</span>
+        <span class="param-value" id="val-align">1.0</span>
+      </div>
+      <input type="range" id="sl-align" min="0" max="5" step="0.1" value="1.0" />
+      <div class="param-hint">Steer toward the average heading of nearby fish.</div>
+    </div>
+
+    <div class="param-row coh">
+      <div class="param-label">
+        <span class="param-name">Cohesion</span>
+        <span class="param-value" id="val-coh">1.0</span>
+      </div>
+      <input type="range" id="sl-coh" min="0" max="5" step="0.1" value="1.0" />
+      <div class="param-hint">Steer toward the average position of nearby fish.</div>
+    </div>
+  </div>
+
+  <!-- Perception -->
+  <div class="section">
+    <div class="section-title">Perception</div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name">Visual Range</span>
+        <span class="param-value" id="val-range">80</span>
+      </div>
+      <input type="range" id="sl-range" min="20" max="200" step="5" value="80" />
+      <div class="param-hint">How far each fish can see. Larger range = more global awareness.</div>
+    </div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name">Separation Radius</span>
+        <span class="param-value" id="val-seprad">25</span>
+      </div>
+      <input type="range" id="sl-seprad" min="5" max="60" step="1" value="25" />
+      <div class="param-hint">Minimum personal space. Fish closer than this are pushed away.</div>
+    </div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name">Field of View</span>
+        <span class="param-value" id="val-fov">270°</span>
+      </div>
+      <input type="range" id="sl-fov" min="60" max="360" step="10" value="270" />
+      <div class="param-hint">Angle of vision. 360° = all-around sight. Lower = blind spots behind.</div>
+    </div>
+  </div>
+
+  <!-- Movement -->
+  <div class="section">
+    <div class="section-title">Movement</div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name">Max Speed</span>
+        <span class="param-value" id="val-speed">3.5</span>
+      </div>
+      <input type="range" id="sl-speed" min="0.5" max="8" step="0.1" value="3.5" />
+      <div class="param-hint">Maximum velocity of each fish (pixels/frame).</div>
+    </div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name">Max Steering Force</span>
+        <span class="param-value" id="val-steer">0.08</span>
+      </div>
+      <input type="range" id="sl-steer" min="0.01" max="0.5" step="0.01" value="0.08" />
+      <div class="param-hint">How sharply fish can turn. Low = sluggish turns, high = erratic.</div>
+    </div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name">Population</span>
+        <span class="param-value" id="val-count">150</span>
+      </div>
+      <input type="range" id="sl-count" min="10" max="400" step="5" value="150" />
+      <div class="param-hint">Number of fish. Changes take effect on reset.</div>
+    </div>
+  </div>
+
+  <!-- Predator -->
+  <div class="section">
+    <div class="section-title">Predator</div>
+
+    <div id="predator-row">
+      <span class="toggle-label">Enable Predator</span>
+      <label class="toggle">
+        <input type="checkbox" id="chk-predator" />
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+
+    <div class="param-row" id="pred-range-row">
+      <div class="param-label">
+        <span class="param-name">Fear Radius</span>
+        <span class="param-value" id="val-predrad">100</span>
+      </div>
+      <input type="range" id="sl-predrad" min="30" max="250" step="5" value="100" />
+      <div class="param-hint">Distance at which fish detect and flee from the predator.</div>
+    </div>
+
+    <div class="param-row" id="pred-speed-row">
+      <div class="param-label">
+        <span class="param-name">Predator Speed</span>
+        <span class="param-value" id="val-predspeed">2.5</span>
+      </div>
+      <input type="range" id="sl-predspeed" min="0.5" max="8" step="0.1" value="2.5" />
+      <div class="param-hint">How fast the predator moves toward the school.</div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div id="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#5bc8f5"></div>Fish</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Predator (when enabled)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fbbf24;border-radius:2px;"></div>Visual range ring</div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button id="btn-pause">⏸ Pause</button>
+    <button id="btn-reset">↺ Reset</button>
+  </div>
+
+  <!-- Stats -->
+  <div id="stats">
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="label">Fish</div>
+        <div class="value" id="stat-count">150</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">Avg Speed</div>
+        <div class="value" id="stat-speed">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">Clusters</div>
+        <div class="value" id="stat-clusters">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">FPS</div>
+        <div class="value" id="stat-fps">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Canvas ── -->
+<div id="canvas-wrap">
+  <canvas id="canvas"></canvas>
+
+  <div id="rules-overlay">
+    <div style="font-size:0.68rem;color:#4a6080;margin-bottom:8px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Boids Rules</div>
+    <div class="rule"><div class="dot sep"></div><span style="color:#f87171">Separation</span> — avoid crowding</div>
+    <div class="rule"><div class="dot align"></div><span style="color:#34d399">Alignment</span> — match direction</div>
+    <div class="rule"><div class="dot coh"></div><span style="color:#a78bfa">Cohesion</span> — move to center</div>
+    <div style="margin-top:8px;font-size:0.66rem;color:#4a6080">Click canvas to show a fish's<br>perception radius</div>
+  </div>
+
+  <div id="paused-badge">PAUSED</div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  BOIDS SIMULATION
+// ─────────────────────────────────────────────
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('canvas-wrap');
+
+// ── Parameters (live) ──
+const P = {
+  sep:      1.5,
+  align:    1.0,
+  coh:      1.0,
+  range:    80,
+  seprad:   25,
+  fov:      270,
+  speed:    3.5,
+  steer:    0.08,
+  count:    150,
+  predator: false,
+  predrad:  100,
+  predspeed:2.5,
+};
+
+// Wire sliders
+function sl(id, key, display, transform) {
+  const el = document.getElementById(id);
+  const dsp = document.getElementById(display);
+  el.addEventListener('input', () => {
+    const v = parseFloat(el.value);
+    P[key] = transform ? transform(v) : v;
+    dsp.textContent = transform ? transform(v) : v;
+  });
+}
+
+sl('sl-sep',      'sep',       'val-sep');
+sl('sl-align',    'align',     'val-align');
+sl('sl-coh',      'coh',       'val-coh');
+sl('sl-range',    'range',     'val-range');
+sl('sl-seprad',   'seprad',    'val-seprad');
+sl('sl-fov',      'fov',       'val-fov', v => v + '°');
+sl('sl-speed',    'speed',     'val-speed');
+sl('sl-steer',    'steer',     'val-steer');
+sl('sl-count',    'count',     'val-count');
+sl('sl-predrad',  'predrad',   'val-predrad');
+sl('sl-predspeed','predspeed', 'val-predspeed');
+
+// Fix fov: slider value is degrees, param is degrees (we convert to radians in logic)
+document.getElementById('sl-fov').addEventListener('input', e => {
+  P.fov = parseFloat(e.target.value);
+  document.getElementById('val-fov').textContent = P.fov + '°';
+});
+
+document.getElementById('chk-predator').addEventListener('change', e => {
+  P.predator = e.target.checked;
+});
+
+// ── Boid ──
+class Boid {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    const angle = Math.random() * Math.PI * 2;
+    const spd = 1 + Math.random() * 2;
+    this.vx = Math.cos(angle) * spd;
+    this.vy = Math.sin(angle) * spd;
+    this.hue = 190 + Math.random() * 30; // blue-cyan range
+  }
+
+  // Limit vector magnitude
+  limit(vx, vy, max) {
+    const m = Math.sqrt(vx * vx + vy * vy);
+    if (m > max) { return [vx / m * max, vy / m * max]; }
+    return [vx, vy];
+  }
+
+  setMag(vx, vy, mag) {
+    const m = Math.sqrt(vx * vx + vy * vy) || 1;
+    return [vx / m * mag, vy / m * mag];
+  }
+
+  canSee(other) {
+    const dx = other.x - this.x;
+    const dy = other.y - this.y;
+    if (P.fov >= 360) return true;
+    const myAngle = Math.atan2(this.vy, this.vx);
+    const toAngle = Math.atan2(dy, dx);
+    let diff = toAngle - myAngle;
+    while (diff > Math.PI)  diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    return Math.abs(diff) <= (P.fov / 2) * Math.PI / 180;
+  }
+
+  update(boids, predator) {
+    let sx = 0, sy = 0;        // separation
+    let ax = 0, ay = 0;        // alignment
+    let cx = 0, cy = 0;        // cohesion
+    let sepCount = 0, neighborCount = 0;
+
+    for (const other of boids) {
+      if (other === this) continue;
+      const dx = other.x - this.x;
+      const dy = other.y - this.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+
+      if (d < P.range && d > 0 && this.canSee(other)) {
+        neighborCount++;
+        // Alignment: accumulate velocities
+        ax += other.vx;
+        ay += other.vy;
+        // Cohesion: accumulate positions
+        cx += other.x;
+        cy += other.y;
+        // Separation: repel if too close
+        if (d < P.seprad) {
+          sx -= dx / d;
+          sy -= dy / d;
+          sepCount++;
+        }
+      }
+    }
+
+    let steerX = 0, steerY = 0;
+
+    if (neighborCount > 0) {
+      // Alignment
+      ax /= neighborCount; ay /= neighborCount;
+      [ax, ay] = this.setMag(ax, ay, P.speed);
+      ax -= this.vx; ay -= this.vy;
+      [ax, ay] = this.limit(ax, ay, P.steer);
+
+      // Cohesion
+      cx = cx / neighborCount - this.x;
+      cy = cy / neighborCount - this.y;
+      [cx, cy] = this.setMag(cx, cy, P.speed);
+      cx -= this.vx; cy -= this.vy;
+      [cx, cy] = this.limit(cx, cy, P.steer);
+
+      steerX += ax * P.align + cx * P.coh;
+      steerY += ay * P.align + cy * P.coh;
+    }
+
+    if (sepCount > 0) {
+      [sx, sy] = this.setMag(sx, sy, P.speed);
+      sx -= this.vx; sy -= this.vy;
+      [sx, sy] = this.limit(sx, sy, P.steer);
+      steerX += sx * P.sep;
+      steerY += sy * P.sep;
+    }
+
+    // Predator avoidance
+    if (P.predator && predator) {
+      const dx = predator.x - this.x;
+      const dy = predator.y - this.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < P.predrad && d > 0) {
+        const strength = 1 - d / P.predrad; // stronger when closer
+        let fx = -dx / d * P.speed;
+        let fy = -dy / d * P.speed;
+        fx -= this.vx; fy -= this.vy;
+        [fx, fy] = this.limit(fx, fy, P.steer * 4);
+        steerX += fx * strength * 8;
+        steerY += fy * strength * 8;
+      }
+    }
+
+    this.vx += steerX;
+    this.vy += steerY;
+    [this.vx, this.vy] = this.limit(this.vx, this.vy, P.speed);
+
+    // Ensure minimum speed
+    const spd = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+    if (spd < 0.5) {
+      this.vx = (Math.random() - 0.5) * 1.0;
+      this.vy = (Math.random() - 0.5) * 1.0;
+    }
+
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Wrap edges
+    const W = canvas.width, H = canvas.height;
+    if (this.x < -10) this.x = W + 10;
+    if (this.x > W + 10) this.x = -10;
+    if (this.y < -10) this.y = H + 10;
+    if (this.y > H + 10) this.y = -10;
+  }
+
+  draw(highlight) {
+    const angle = Math.atan2(this.vy, this.vx);
+    const len = 8, width = 4;
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(angle);
+
+    // Body: elongated teardrop
+    const spd = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+    const t = Math.min(spd / P.speed, 1);
+    const brightness = 55 + t * 30;
+
+    ctx.beginPath();
+    ctx.moveTo(len, 0);
+    ctx.lineTo(-len * 0.6, -width * 0.5);
+    ctx.lineTo(-len, 0);
+    ctx.lineTo(-len * 0.6, width * 0.5);
+    ctx.closePath();
+    ctx.fillStyle = `hsla(${this.hue}, 80%, ${brightness}%, 0.92)`;
+    ctx.fill();
+
+    if (highlight) {
+      // Draw visual range ring
+      ctx.restore();
+      ctx.save();
+      ctx.translate(this.x, this.y);
+
+      // FOV arc
+      const startAngle = angle - (P.fov / 2) * Math.PI / 180;
+      const endAngle   = angle + (P.fov / 2) * Math.PI / 180;
+      ctx.beginPath();
+      if (P.fov >= 360) {
+        ctx.arc(0, 0, P.range, 0, Math.PI * 2);
+      } else {
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, P.range, startAngle, endAngle);
+        ctx.closePath();
+      }
+      ctx.strokeStyle = 'rgba(251,191,36,0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(251,191,36,0.05)';
+      ctx.fill();
+
+      // Separation radius
+      ctx.beginPath();
+      ctx.arc(0, 0, P.seprad, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(248,113,113,0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+}
+
+// ── Predator ──
+class Predator {
+  constructor() {
+    this.x = canvas.width / 2;
+    this.y = canvas.height / 2;
+    this.vx = 1;
+    this.vy = 0.5;
+  }
+
+  update(boids) {
+    // Chase closest boid
+    let closest = null, minD = Infinity;
+    for (const b of boids) {
+      const dx = b.x - this.x, dy = b.y - this.y;
+      const d = dx * dx + dy * dy;
+      if (d < minD) { minD = d; closest = b; }
+    }
+    if (closest) {
+      const dx = closest.x - this.x, dy = closest.y - this.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      this.vx += (dx / d) * 0.15;
+      this.vy += (dy / d) * 0.15;
+    }
+    const spd = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+    if (spd > P.predspeed) {
+      this.vx = this.vx / spd * P.predspeed;
+      this.vy = this.vy / spd * P.predspeed;
+    }
+    this.x += this.vx;
+    this.y += this.vy;
+    const W = canvas.width, H = canvas.height;
+    if (this.x < -20) this.x = W + 20;
+    if (this.x > W + 20) this.x = -20;
+    if (this.y < -20) this.y = H + 20;
+    if (this.y > H + 20) this.y = -20;
+  }
+
+  draw() {
+    const angle = Math.atan2(this.vy, this.vx);
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(angle);
+    // Fear radius
+    ctx.beginPath();
+    ctx.arc(0, 0, P.predrad, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(239,68,68,0.15)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Body: shark-like
+    ctx.beginPath();
+    ctx.moveTo(14, 0);
+    ctx.lineTo(-10, -7);
+    ctx.lineTo(-14, 0);
+    ctx.lineTo(-10, 7);
+    ctx.closePath();
+    ctx.fillStyle = '#ef4444';
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ── State ──
+let boids = [];
+let predator = null;
+let paused = false;
+let selectedBoid = null;
+let animId = null;
+
+// Stats
+let fps = 0, lastTime = performance.now(), frameCount = 0;
+
+function init() {
+  resize();
+  boids = [];
+  const W = canvas.width, H = canvas.height;
+  for (let i = 0; i < P.count; i++) {
+    boids.push(new Boid(Math.random() * W, Math.random() * H));
+  }
+  predator = new Predator();
+  selectedBoid = null;
+}
+
+function resize() {
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+
+// ── Estimate clusters (simple grouping by proximity) ──
+function estimateClusters() {
+  const threshold = P.range * 1.5;
+  const visited = new Set();
+  let clusters = 0;
+  for (let i = 0; i < boids.length; i++) {
+    if (visited.has(i)) continue;
+    clusters++;
+    const stack = [i];
+    while (stack.length) {
+      const curr = stack.pop();
+      if (visited.has(curr)) continue;
+      visited.add(curr);
+      for (let j = 0; j < boids.length; j++) {
+        if (visited.has(j)) continue;
+        const dx = boids[curr].x - boids[j].x;
+        const dy = boids[curr].y - boids[j].y;
+        if (dx * dx + dy * dy < threshold * threshold) stack.push(j);
+      }
+    }
+  }
+  return clusters;
+}
+
+// ── Render ──
+function draw() {
+  const W = canvas.width, H = canvas.height;
+
+  // Dark gradient background
+  ctx.fillStyle = '#070b14';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle grid
+  ctx.strokeStyle = 'rgba(30,45,70,0.25)';
+  ctx.lineWidth = 0.5;
+  const gridSize = 60;
+  for (let x = 0; x < W; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  for (let i = 0; i < boids.length; i++) {
+    boids[i].draw(boids[i] === selectedBoid);
+  }
+
+  if (P.predator && predator) predator.draw();
+}
+
+// ── Update stats ──
+function updateStats() {
+  let totalSpd = 0;
+  for (const b of boids) {
+    totalSpd += Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+  }
+  document.getElementById('stat-count').textContent = boids.length;
+  document.getElementById('stat-speed').textContent = (totalSpd / boids.length).toFixed(1);
+
+  frameCount++;
+  const now = performance.now();
+  if (now - lastTime >= 500) {
+    fps = Math.round(frameCount / ((now - lastTime) / 1000));
+    frameCount = 0;
+    lastTime = now;
+    document.getElementById('stat-fps').textContent = fps;
+    // clusters is expensive, update less often
+    document.getElementById('stat-clusters').textContent = estimateClusters();
+  }
+}
+
+// ── Loop ──
+function loop() {
+  if (!paused) {
+    for (const b of boids) b.update(boids, P.predator ? predator : null);
+    if (P.predator && predator) predator.update(boids);
+    updateStats();
+  }
+  draw();
+  animId = requestAnimationFrame(loop);
+}
+
+// ── Controls ──
+document.getElementById('btn-pause').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('btn-pause').textContent = paused ? '▶ Resume' : '⏸ Pause';
+  document.getElementById('paused-badge').style.display = paused ? 'block' : 'none';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  P.count = parseInt(document.getElementById('sl-count').value);
+  init();
+});
+
+// Click to select boid
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  let closest = null, minD = 30;
+  for (const b of boids) {
+    const d = Math.sqrt((b.x - mx) ** 2 + (b.y - my) ** 2);
+    if (d < minD) { minD = d; closest = b; }
+  }
+  selectedBoid = (closest === selectedBoid) ? null : closest;
+});
+
+window.addEventListener('resize', () => {
+  resize();
+  // Reposition boids into new bounds without full reset
+  for (const b of boids) {
+    if (b.x > canvas.width)  b.x = Math.random() * canvas.width;
+    if (b.y > canvas.height) b.y = Math.random() * canvas.height;
+  }
+});
+
+// ── Start ──
+init();
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ecosystem Simulations</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #060c08;
+      color: #b8d4b8;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #4ade80;
+      letter-spacing: 0.02em;
+    }
+
+    header p {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #4a6650;
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      width: 100%;
+      max-width: 960px;
+    }
+
+    a.card {
+      display: flex;
+      flex-direction: column;
+      background: #0b1410;
+      border: 1px solid #162418;
+      border-radius: 10px;
+      padding: 28px 26px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    a.card:hover {
+      border-color: #4ade80;
+      transform: translateY(-3px);
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+      line-height: 1;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #4ade80;
+      margin-bottom: 8px;
+    }
+
+    .card p {
+      font-size: 0.8rem;
+      color: #5a7a60;
+      line-height: 1.6;
+      flex-grow: 1;
+    }
+
+    .card .tag {
+      margin-top: 18px;
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #2a5a38;
+      border: 1px solid #1e3d28;
+      border-radius: 4px;
+      padding: 3px 8px;
+      align-self: flex-start;
+    }
+
+    .boids a.card:hover { border-color: #60a5fa; }
+    .boids .card h2    { color: #60a5fa; }
+    .boids .card .tag  { color: #2a3d5a; border-color: #1e2d45; }
+
+    footer {
+      margin-top: 56px;
+      font-size: 0.72rem;
+      color: #2a3d2a;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Ecosystem Simulations</h1>
+    <p>Interactive agent-based models exploring emergence, evolution, and collective behavior.</p>
+  </header>
+
+  <div class="grid">
+
+    <a class="card" href="predator-prey.html">
+      <div class="card-icon">🌿</div>
+      <h2>Predator-Prey Ecosystem</h2>
+      <p>Agent-based Lotka-Volterra model. Populations rise and fall based on energy — no hard-coded birth/death rates.</p>
+      <span class="tag">Lotka-Volterra</span>
+    </a>
+
+    <a class="card" href="predator-prey-evo.html">
+      <div class="card-icon">🧬</div>
+      <h2>Evolutionary Ecosystem</h2>
+      <p>Every behavioral parameter is a heritable gene. Sliders set initial values — natural selection drifts them from there.</p>
+      <span class="tag">Natural Selection</span>
+    </a>
+
+    <div class="boids">
+      <a class="card" href="boids.html">
+        <div class="card-icon">🐟</div>
+        <h2>Fish Schooling — Boids</h2>
+        <p>Emergent collective behavior from 3 local rules. Each fish only senses its neighbors — no global coordination exists.</p>
+        <span class="tag">Emergent Behavior</span>
+      </a>
+    </div>
+
+  </div>
+
+  <footer>Open source — run entirely in your browser, no server needed.</footer>
+
+</body>
+</html>

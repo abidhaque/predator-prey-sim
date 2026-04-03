@@ -634,15 +634,19 @@
       left: 14px;
       background: rgba(6,12,8,0.80);
       border: 1px solid #162418;
-      border-radius: 9px;
-      padding: 10px 14px;
-      font-size: 0.7rem;
-      line-height: 1.8;
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-size: 0.65rem;
+      line-height: 1;
       pointer-events: none;
       backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
     }
 
-    .oi-row { display: flex; align-items: center; gap: 7px; }
+    .oi-row { display: flex; align-items: center; gap: 5px; }
     .oi-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
     #extinction-overlay {
@@ -1100,7 +1104,7 @@
     <div class="oi-row"><div class="oi-dot" style="background:#4ade80"></div><span style="color:#8aaa8a">Prey — flock, eat food, flee predators</span></div>
     <div class="oi-row"><div class="oi-dot" style="background:#f87171"></div><span style="color:#8aaa8a">Predators — chase, eat prey, reproduce</span></div>
     <div class="oi-row"><div class="oi-dot" style="background:#fde047"></div><span style="color:#8aaa8a">Food — regrows over time</span></div>
-    <div style="margin-top:6px;font-size:0.63rem;color:#3a5540">Brightness = energy level<br>Click an agent to inspect it</div>
+    <div style="font-size:0.6rem;color:#3a5540;white-space:nowrap">Brightness = energy</div>
   </div>
 
   <div id="extinction-overlay">

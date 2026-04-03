@@ -251,9 +251,10 @@
     /* ── Bottom-left HUD overlay ── */
     #hud-overlay {
       position: absolute;
-      bottom: 16px;
-      left: 16px;
-      width: 280px;
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
       background: rgba(6,12,8,0.55);
       border: 1px solid rgba(22,36,24,0.5);
       border-radius: 10px;
@@ -267,20 +268,22 @@
 
     #hud-protrude {
       position: absolute;
-      top: -30px;
-      left: 0;
-      background: rgba(6,12,8,0.85);
-      border: 1px solid rgba(74,222,128,0.3);
+      top: -46px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(6,12,8,0.92);
+      border: 1px solid rgba(74,222,128,0.5);
       border-bottom: none;
-      border-radius: 8px 8px 0 0;
+      border-radius: 12px 12px 0 0;
       color: #4ade80;
-      font-size: 0.62rem;
+      font-size: 0.78rem;
       font-weight: 700;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 6px 14px;
+      padding: 10px 28px;
       pointer-events: auto;
       white-space: nowrap;
+      box-shadow: 0 -2px 12px rgba(74,222,128,0.12);
     }
 
     #hud-toggle-row {
@@ -801,9 +804,10 @@
         z-index: 25;
       }
       #hud-overlay {
-        width: calc(100vw - 32px);
-        left: 16px;
-        bottom: 12px;
+        width: calc(100vw - 48px);
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: calc(56px + env(safe-area-inset-bottom, 0px));
       }
       #info-overlay { display: none; }
       .stat-box .s-value { font-size: 0.85rem; }

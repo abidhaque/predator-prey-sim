@@ -1182,7 +1182,7 @@ class Prey {
     this.generation = 0;
     this.name     = autoName(false);
     this.thought  = '';
-    this.thoughtFrameCd = Math.floor(Math.random() * 120);
+    this.thoughtFrameCd = Math.floor(Math.random() * 360);
     // State flags set each tick for use by thought system
     this.isFleeing = false; this.isInCoral = false; this.isHungry = false; this.neighN = 0;
   }
@@ -1417,7 +1417,7 @@ class Predator {
     this.generation = 0;
     this.name     = autoName(true);
     this.thought  = '';
-    this.thoughtFrameCd = Math.floor(Math.random() * 120);
+    this.thoughtFrameCd = Math.floor(Math.random() * 360);
     // State flags set each tick for use by thought system
     this.hasTarget = false; this.targetClose = false;
   }
@@ -1729,7 +1729,7 @@ function updateAllThoughts() {
   for (const p of prey) {
     if (!p.alive) continue;
     if (--p.thoughtFrameCd > 0) continue;
-    p.thoughtFrameCd = 100 + Math.floor(Math.random() * 100); // ~1.7–3.3s at 60fps
+    p.thoughtFrameCd = 360 + Math.floor(Math.random() * 240); // ~6–10s at 60fps
     const prev = p.thought;
     computePreyThought(p);
     if (p.thought !== prev) addChatMessage(p, false);
@@ -1737,7 +1737,7 @@ function updateAllThoughts() {
   for (const p of predators) {
     if (!p.alive) continue;
     if (--p.thoughtFrameCd > 0) continue;
-    p.thoughtFrameCd = 100 + Math.floor(Math.random() * 100);
+    p.thoughtFrameCd = 360 + Math.floor(Math.random() * 240);
     const prev = p.thought;
     computePredThought(p);
     if (p.thought !== prev) addChatMessage(p, true);

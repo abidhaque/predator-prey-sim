@@ -647,6 +647,15 @@
       <input type="range" id="sl-num-corals" min="0" max="8" step="1" value="3" />
       <div class="param-hint">Safe havens — prey hide here, predators blocked. Reset to apply.</div>
     </div>
+
+    <div class="param-row">
+      <div class="param-label">
+        <span class="param-name">Sim Speed</span>
+        <span class="param-value" id="val-sim-speed">1×</span>
+      </div>
+      <input type="range" id="sl-sim-speed" min="1" max="8" step="1" value="1" />
+      <div class="param-hint">Steps per frame. Higher = faster simulation.</div>
+    </div>
   </div>
 
   <!-- Prey flocking -->
@@ -808,6 +817,7 @@ const P = {
   coh:       0.8,
   flockRange: 65,
   numCorals: 3,
+  simSpeed:  1,
   initPrey:  100,
   initPred:  6,
 };
@@ -847,6 +857,12 @@ bindSlider('sl-flock-range', 'flockRange',         'val-flock-range');
 bindSlider('sl-init-prey',   'initPrey',           'val-init-prey');
 bindSlider('sl-init-pred',   'initPred',           'val-init-pred');
 bindSlider('sl-num-corals',  'numCorals',          'val-num-corals');
+
+// Sim speed slider — not a standard param, updates display with × suffix
+document.getElementById('sl-sim-speed').addEventListener('input', function() {
+  P.simSpeed = parseInt(this.value);
+  document.getElementById('val-sim-speed').textContent = P.simSpeed + '×';
+});
 
 // ── Utility ──
 function vLimit(vx, vy, max) {
@@ -1065,7 +1081,7 @@ class Prey {
     this.sz       = rand(4.5, 6);
     this.cooldown = rand(0, 60) | 0;
     this.generation = 0;
-    this.name     = null;
+    this.name     = autoName(false);
     this.thought  = '';
   }
 
@@ -1229,8 +1245,8 @@ class Prey {
     if (this.x < -10) this.x = W + 10; if (this.x > W + 10) this.x = -10;
     if (this.y < -10) this.y = H + 10; if (this.y > H + 10) this.y = -10;
 
-    // Update thought (only for named or selected agents to save CPU)
-    if (this.name || this === selectedAgent) {
+    // Update thought only for selected agent
+    if (this === selectedAgent) {
       const eRat = this.energy / PREY_MAX_E;
       if (inCoral(this.x, this.y) && fleeing)
         this.thought = pick(['phew... safe in here 😮‍💨', 'can\'t catch me in here!!', 'lalalala not listening', 'this is fine. this is fine.', 'stay veeeery still...']);
@@ -1298,7 +1314,7 @@ class Prey {
 
     ctx.restore();
 
-    if (this.name) drawThoughtBubble(this.x, this.y - sz - 4, this.thought, this.name, '#4ade80');
+    if (this === selectedAgent) drawThoughtBubble(this.x, this.y, this.thought, this.name, '#4ade80');
   }
 }
 
@@ -1314,7 +1330,7 @@ class Predator {
     this.cooldown = rand(0, 120) | 0;
     this.sz       = rand(9, 12);
     this.generation = 0;
-    this.name     = null;
+    this.name     = autoName(true);
     this.thought  = '';
   }
 
@@ -1405,7 +1421,7 @@ class Predator {
     if (this.x < -20) this.x = W + 20; if (this.x > W + 20) this.x = -20;
     if (this.y < -20) this.y = H + 20; if (this.y > H + 20) this.y = -20;
 
-    if (this.name || this === selectedAgent) {
+    if (this === selectedAgent) {
       const eRat = this.energy / PRED_MAX_E;
       if (target && targetDist < 30)
         this.thought = pick(['GOTCHA!!', 'nom nom nom 😈', 'you had ONE job', 'nothing personal kid', 'dinner is served 🍽️']);
@@ -1483,71 +1499,101 @@ class Predator {
 
     ctx.restore();
 
-    if (this.name) drawThoughtBubble(this.x, this.y - sz - 4, this.thought, this.name, '#f87171');
+    if (this === selectedAgent) drawThoughtBubble(this.x, this.y, this.thought, this.name, '#f87171');
   }
 }
 
 // ── Thought bubble helpers ──
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+// ── Name generators ──
+const PREY_NAMES = [
+  'Gary','Finnegan','Blub','Swimmy','Nemo Jr.','Kevin','Dave',
+  'Bubbles','Splashy','Sir Flops','Guppy McFace','Captain Zoom',
+  'Speedboi','The Flash (lol)','Wigglesworth','Blinky','Lil Swimmer',
+  'Lenny','Gerald','Dory Jr.','Mr. Minnow','Zigzag',
+];
+const PRED_NAMES = [
+  'Chompy','Big Derek','The Destroyer','Jaws II','Reginald',
+  'Professor Munch','Death Bringer','Sharknado Jr.','Barry','The Void',
+  'Margaret','Lord Bitey','Steven (evil)','Annihilator','Big Hungry',
+  'Dread Fin','The Reckoning','Frank','Omega Nom','Terrorfish',
+];
+
+function autoName(isPred) {
+  const pool = isPred ? PRED_NAMES : PREY_NAMES;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── Thought bubble — pager/SMS style, appears to the right of agent ──
 function drawThoughtBubble(ax, ay, text, name, accentColor) {
   if (!text) return;
   ctx.save();
-  ctx.font = 'bold 10px "Segoe UI", system-ui, sans-serif';
-  const maxW  = 160;
+  ctx.font = '11px "Segoe UI", system-ui, sans-serif';
+  const maxW  = 170;
   const words = text.split(' ');
   const lines = [];
   let line = '';
   for (const w of words) {
     const test = line ? line + ' ' + w : w;
-    if (ctx.measureText(test).width > maxW - 16 && line) { lines.push(line); line = w; }
+    if (ctx.measureText(test).width > maxW - 20 && line) { lines.push(line); line = w; }
     else line = test;
   }
   if (line) lines.push(line);
 
-  const lh  = 14;
-  const pad = 8;
-  const bw  = Math.min(maxW, Math.max(...lines.map(l => ctx.measureText(l).width)) + pad * 2);
-  const bh  = lines.length * lh + pad * 2;
-  const bx  = ax - bw / 2;
-  const by  = ay - bh - 14;
+  const lh    = 15;
+  const pad   = 9;
+  const bw    = Math.min(maxW, Math.max(...lines.map(l => ctx.measureText(l).width)) + pad * 2);
+  const bh    = lines.length * lh + pad * 2 + 16; // extra room for name header
+  const tailX = ax + 14;   // tail anchors just right of agent
+  const bx    = tailX + 8; // bubble starts to the right
+  const by    = ay - bh / 2;
 
-  // Bubble
+  // Clamp horizontally so bubble stays on canvas
+  const cw    = simCanvas.width;
+  const offX  = Math.max(0, bx + bw - cw + 8);
+  const rbx   = bx - offX;
+
+  // SMS bubble shape with left-side tail
+  const r = 8;
   ctx.beginPath();
-  const r = 7;
-  ctx.moveTo(bx + r, by);
-  ctx.lineTo(bx + bw - r, by);
-  ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + r);
-  ctx.lineTo(bx + bw, by + bh - r);
-  ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - r, by + bh);
-  // Tail
-  ctx.lineTo(ax + 6, by + bh);
-  ctx.lineTo(ax, ay);
-  ctx.lineTo(ax - 6, by + bh);
-  ctx.lineTo(bx + r, by + bh);
-  ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - r);
-  ctx.lineTo(bx, by + r);
-  ctx.quadraticCurveTo(bx, by, bx + r, by);
+  ctx.moveTo(rbx + r, by);
+  ctx.lineTo(rbx + bw - r, by);
+  ctx.quadraticCurveTo(rbx + bw, by, rbx + bw, by + r);
+  ctx.lineTo(rbx + bw, by + bh - r);
+  ctx.quadraticCurveTo(rbx + bw, by + bh, rbx + bw - r, by + bh);
+  ctx.lineTo(rbx + r, by + bh);
+  ctx.quadraticCurveTo(rbx, by + bh, rbx, by + bh - r);
+  ctx.lineTo(rbx, by + bh / 2 + 6);
+  // Tail pointing left toward agent
+  ctx.lineTo(tailX, ay);
+  ctx.lineTo(rbx, by + bh / 2 - 6);
+  ctx.lineTo(rbx, by + r);
+  ctx.quadraticCurveTo(rbx, by, rbx + r, by);
   ctx.closePath();
-  ctx.fillStyle   = 'rgba(8, 20, 12, 0.92)';
+  ctx.fillStyle = 'rgba(10, 22, 14, 0.93)';
   ctx.fill();
   ctx.strokeStyle = accentColor;
-  ctx.lineWidth   = 1.2;
-  ctx.globalAlpha = 0.85;
+  ctx.lineWidth   = 1.5;
+  ctx.globalAlpha = 0.9;
   ctx.stroke();
   ctx.globalAlpha = 1;
 
-  // Name tag
-  ctx.font      = `bold 9px "Segoe UI", system-ui, sans-serif`;
-  ctx.fillStyle = accentColor;
-  ctx.textAlign = 'center';
-  ctx.fillText(name, ax, by - 2);
+  // Name header bar
+  ctx.fillStyle = accentColor + '22'; // subtle tint
+  ctx.fillRect(rbx + 1, by + 1, bw - 2, 16);
 
-  // Text
-  ctx.font      = '10px "Segoe UI", system-ui, sans-serif';
-  ctx.fillStyle = '#c8e8c8';
+  // Name
+  ctx.font      = 'bold 9px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = accentColor;
+  ctx.textAlign = 'left';
+  ctx.fillText(name, rbx + pad, by + 12);
+
+  // Text lines
+  ctx.font      = '11px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = '#d4edd4';
   for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], ax, by + pad + (i + 0.75) * lh);
+    ctx.fillText(lines[i], rbx + pad, by + 18 + pad + (i + 0.75) * lh);
   }
   ctx.restore();
 }
@@ -1754,6 +1800,8 @@ function draw() {
 // ── Main loop ──
 function loop() {
   if (!paused) {
+    const steps = P.simSpeed | 1;
+    for (let s = 0; s < steps; s++) {
     tick++;
 
     // Food regeneration
@@ -1794,6 +1842,7 @@ function loop() {
       maxHistFood = Math.max(maxHistFood, foods.length);
     }
 
+    } // end steps loop
     updateStats();
     checkExtinction();
     if (tick % 60 === 0) updateScore();
@@ -1980,7 +2029,7 @@ function updateInspector() {
   const isPred = predators.includes(selectedAgent);
   document.getElementById('inspector-type').textContent = isPred ? '🔴 Predator' : '🟢 Prey';
   document.getElementById('inspector-type').style.color = isPred ? '#f87171' : '#4ade80';
-  document.getElementById('inspector-name').value = selectedAgent.name || '';
+  document.getElementById('inspector-name').value = selectedAgent.name || autoName(predators.includes(selectedAgent));
   document.getElementById('inspector-thought').textContent = selectedAgent.thought || '...';
 }
 
@@ -1999,7 +2048,7 @@ simCanvas.addEventListener('click', e => {
   const rect = simCanvas.getBoundingClientRect();
   const mx = (e.clientX - rect.left) * (simCanvas.width  / rect.width);
   const my = (e.clientY - rect.top)  * (simCanvas.height / rect.height);
-  let best = null, bestD = 22;
+  let best = null, bestD = 50;
   for (const p of [...prey, ...predators]) {
     const d = Math.hypot(p.x - mx, p.y - my);
     if (d < bestD) { bestD = d; best = p; }
